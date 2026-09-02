@@ -21,6 +21,18 @@ class AnalyzeRequest(BaseModel):
         return value
 
 
+class RepositoryStructureItem(BaseModel):
+    path: str
+    type: str
+    size: int | None = None
+
+
+class SourceFile(BaseModel):
+    path: str
+    language: str
+    content: str
+
+
 class RepositoryAnalysis(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -32,3 +44,5 @@ class RepositoryAnalysis(BaseModel):
     forks: int
     repository_size: int
     languages: dict[str, int]
+    structure: list[RepositoryStructureItem] = Field(default_factory=list)
+    source_files: list[SourceFile] = Field(default_factory=list)
