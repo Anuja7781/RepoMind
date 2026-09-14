@@ -3,6 +3,8 @@ import base64
 import httpx
 import pytest
 
+from app.schemas import SourceFile
+from app.services.ast_parser import ASTParser
 from app.services.github_service import GitHubService
 
 
@@ -109,3 +111,50 @@ async def test_analyze_repository_includes_structure_and_source_files():
         {"path": "src/app.py", "language": "python", "content": "print('hello from python')\n"},
         {"path": "src/logic.js", "language": "javascript", "content": "console.log('hi');\n"},
     ]
+    assert result.model_dump()["ast_analysis"] == [
+        {
+            "path": "src/app.py",
+            "language": "python",
+            "imports": [],
+            "classes": [],
+            "functions": [],
+        }
+    ]
+
+
+def test_ast_parser_extracts_python_symbols_and_handles_invalid_syntax():
+    parser = ASTParser()
+
+    analysis = parser.analyze_source_file(
+        SourceFile(
+            path="app.py",
+            language="python",
+            content=(
+                "import fastapi\n"
+                "from app.routers import analysis\n"
+                "class Service:\n"
+                "    async def run(self):\n"
+                "        pass\n"
+                "def root():\n"
+                "    pass\n"
+            ),
+        )
+    )
+
+    assert analysis is not None
+    assert analysis.imports == ["fastapi", "app.routers.analysis"]
+    assert analysis.classes == ["Service"]
+    assert set(analysis.functions) == {"run", "root"}
+
+    invalid_analysis = parser.analyze_source_file(
+        SourceFile(path="broken.py", language="python", content="def broken(:\n")
+    )
+
+    assert invalid_analysis is not None
+    assert invalid_analysis.model_dump() == {
+        "path": "broken.py",
+        "language": "python",
+        "imports": [],
+        "classes": [],
+        "functions": [],
+    }

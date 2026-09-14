@@ -5,6 +5,7 @@ from urllib.parse import quote, urlparse
 import httpx
 
 from app.schemas import RepositoryAnalysis, RepositoryStructureItem, SourceFile
+from app.services.ast_parser import ASTParser
 
 
 SOURCE_FILE_EXTENSIONS = {
@@ -81,6 +82,7 @@ class GitHubService:
             )
             for item in tree_data.get("tree", [])
         ]
+        ast_parser = ASTParser()
 
         return RepositoryAnalysis(
             name=repository_data["name"],
@@ -93,6 +95,11 @@ class GitHubService:
             languages=languages,
             structure=structure,
             source_files=source_files,
+            ast_analysis=[
+                analysis
+                for source_file in source_files
+                if (analysis := ast_parser.analyze_source_file(source_file)) is not None
+            ],
         )
 
     async def _fetch_source_files(

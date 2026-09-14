@@ -33,6 +33,14 @@ class SourceFile(BaseModel):
     content: str
 
 
+class ASTAnalysis(BaseModel):
+    path: str
+    language: str
+    imports: list[str] = Field(default_factory=list)
+    classes: list[str] = Field(default_factory=list)
+    functions: list[str] = Field(default_factory=list)
+
+
 class RepositoryAnalysis(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -46,3 +54,4 @@ class RepositoryAnalysis(BaseModel):
     languages: dict[str, int]
     structure: list[RepositoryStructureItem] = Field(default_factory=list)
     source_files: list[SourceFile] = Field(default_factory=list)
+    ast_analysis: list[ASTAnalysis] = Field(default_factory=list)
