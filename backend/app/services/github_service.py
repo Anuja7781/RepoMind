@@ -1,11 +1,14 @@
 import base64
 import os
+from pathlib import PurePosixPath
 from urllib.parse import quote, urlparse
 
 import httpx
 
 from app.schemas import RepositoryAnalysis, RepositoryStructureItem, SourceFile
 from app.services.ast_parser import ASTParser
+from app.services.config import get_github_token
+from app.services.dependency_analyzer import DependencyAnalyzer
 
 
 SOURCE_FILE_EXTENSIONS = {
@@ -24,6 +27,7 @@ SOURCE_FILE_EXTENSIONS = {
 
 MAX_SOURCE_FILES = 50
 MAX_SOURCE_BYTES = 250_000
+EXCLUDED_SOURCE_DIRECTORIES = {"venv", ".venv", "env", "__pycache__"}
 
 
 class RepositoryNotFoundError(Exception):
@@ -40,11 +44,15 @@ class GitHubService:
     async def analyze_repository(self, repository_url: str) -> RepositoryAnalysis:
         owner, repository = self._repository_parts(repository_url)
         endpoint = f"{self.api_base_url}/repos/{owner}/{repository}"
+        github_token = get_github_token()
 
         try:
             async with httpx.AsyncClient(
                 timeout=httpx.Timeout(10.0),
-                headers={"Accept": "application/vnd.github+json"},
+                headers={
+                    "Accept": "application/vnd.github+json",
+                    "Authorization": f"Bearer {github_token}",
+                },
             ) as client:
                 response = await client.get(endpoint)
                 if response.status_code == 404:
@@ -83,6 +91,11 @@ class GitHubService:
             for item in tree_data.get("tree", [])
         ]
         ast_parser = ASTParser()
+        ast_analysis = [
+            analysis
+            for source_file in source_files
+            if (analysis := ast_parser.analyze_source_file(source_file)) is not None
+        ]
 
         return RepositoryAnalysis(
             name=repository_data["name"],
@@ -95,11 +108,8 @@ class GitHubService:
             languages=languages,
             structure=structure,
             source_files=source_files,
-            ast_analysis=[
-                analysis
-                for source_file in source_files
-                if (analysis := ast_parser.analyze_source_file(source_file)) is not None
-            ],
+            ast_analysis=ast_analysis,
+            dependency_analysis=DependencyAnalyzer().analyze(ast_analysis),
         )
 
     async def _fetch_source_files(
@@ -116,6 +126,9 @@ class GitHubService:
                 continue
 
             path = item.get("path", "")
+            if self._is_excluded_source_path(path):
+                continue
+
             language = self._source_language(path)
             if not language:
                 continue
@@ -168,6 +181,13 @@ class GitHubService:
     def _source_language(path: str) -> str | None:
         _, extension = os.path.splitext(path)
         return SOURCE_FILE_EXTENSIONS.get(extension.lower())
+
+    @staticmethod
+    def _is_excluded_source_path(path: str) -> bool:
+        return any(
+            directory in EXCLUDED_SOURCE_DIRECTORIES
+            for directory in PurePosixPath(path).parts
+        )
 
     @staticmethod
     def _repository_parts(repository_url: str) -> tuple[str, str]:

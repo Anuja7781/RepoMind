@@ -41,6 +41,11 @@ class ASTAnalysis(BaseModel):
     functions: list[str] = Field(default_factory=list)
 
 
+class DependencyAnalysis(BaseModel):
+    source_file: str
+    target_module: str
+
+
 class RepositoryAnalysis(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -55,3 +60,4 @@ class RepositoryAnalysis(BaseModel):
     structure: list[RepositoryStructureItem] = Field(default_factory=list)
     source_files: list[SourceFile] = Field(default_factory=list)
     ast_analysis: list[ASTAnalysis] = Field(default_factory=list)
+    dependency_analysis: list[DependencyAnalysis] = Field(default_factory=list)
