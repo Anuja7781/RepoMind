@@ -6,9 +6,11 @@ from urllib.parse import quote, urlparse
 import httpx
 
 from app.schemas import RepositoryAnalysis, RepositoryStructureItem, SourceFile
+from app.services.architecture_analyzer import ArchitectureAnalyzer
 from app.services.ast_parser import ASTParser
 from app.services.config import get_github_token
 from app.services.dependency_analyzer import DependencyAnalyzer
+from app.services.dependency_graph import build_dependency_graph
 
 
 SOURCE_FILE_EXTENSIONS = {
@@ -96,6 +98,7 @@ class GitHubService:
             for source_file in source_files
             if (analysis := ast_parser.analyze_source_file(source_file)) is not None
         ]
+        dependency_analysis = DependencyAnalyzer().analyze(ast_analysis)
 
         return RepositoryAnalysis(
             name=repository_data["name"],
@@ -109,7 +112,12 @@ class GitHubService:
             structure=structure,
             source_files=source_files,
             ast_analysis=ast_analysis,
-            dependency_analysis=DependencyAnalyzer().analyze(ast_analysis),
+            dependency_analysis=dependency_analysis,
+            dependency_graph=build_dependency_graph(dependency_analysis, ast_analysis),
+            architecture_analysis=ArchitectureAnalyzer().analyze(
+                ast_analysis,
+                dependency_analysis,
+            ),
         )
 
     async def _fetch_source_files(

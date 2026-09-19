@@ -35,14 +35,14 @@ class DependencyAnalyzer:
         return dependencies
 
     @staticmethod
-    def _module_paths(ast_analysis: list[ASTAnalysis]) -> dict[str, str]:
-        module_paths: dict[str, str] = {}
+    def _module_paths(ast_analysis: list[ASTAnalysis]) -> dict[str, list[str]]:
+        module_paths: dict[str, list[str]] = {}
         for analysis in ast_analysis:
             if analysis.language != "python":
                 continue
 
             for module in DependencyAnalyzer._module_names(analysis.path):
-                module_paths[module] = analysis.path
+                module_paths.setdefault(module, []).append(analysis.path)
         return module_paths
 
     @staticmethod
@@ -66,12 +66,15 @@ class DependencyAnalyzer:
         cls,
         imported_module: str,
         source_path: str,
-        module_paths: dict[str, str],
+        module_paths: dict[str, list[str]],
     ) -> str | None:
         candidates = cls._import_candidates(imported_module, source_path)
         for candidate in candidates:
-            if candidate in module_paths:
+            paths = module_paths.get(candidate, [])
+            if len(paths) == 1:
                 return candidate
+            if len(paths) > 1:
+                return None
         return None
 
     @staticmethod
