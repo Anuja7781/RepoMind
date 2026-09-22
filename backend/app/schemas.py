@@ -33,11 +33,30 @@ class SourceFile(BaseModel):
     content: str
 
 
+class ImportBinding(BaseModel):
+    local_name: str
+    qualified_name: str
+
+
+class CallReference(BaseModel):
+    expression: str
+    line_number: int
+
+
+class BaseReference(BaseModel):
+    expression: str
+    line_number: int
+
+
 class FunctionAnalysis(BaseModel):
     name: str
     path: str
     line_number: int
     parameters: list[str] = Field(default_factory=list)
+    call_references: list[CallReference] = Field(
+        default_factory=list,
+        exclude=True,
+    )
 
 
 class ClassAnalysis(BaseModel):
@@ -45,6 +64,10 @@ class ClassAnalysis(BaseModel):
     path: str
     line_number: int
     methods: list[FunctionAnalysis] = Field(default_factory=list)
+    base_references: list[BaseReference] = Field(
+        default_factory=list,
+        exclude=True,
+    )
 
 
 class ASTAnalysis(BaseModel):
@@ -90,6 +113,10 @@ class ASTAnalysis(BaseModel):
     functions: list[str] = Field(default_factory=list)
     function_details: list[FunctionAnalysis] = Field(default_factory=list)
     class_details: list[ClassAnalysis] = Field(default_factory=list)
+    import_bindings: list[ImportBinding] = Field(
+        default_factory=list,
+        exclude=True,
+    )
 
 
 class DependencyAnalysis(BaseModel):

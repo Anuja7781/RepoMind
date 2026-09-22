@@ -1,4 +1,5 @@
 from app.schemas import ASTAnalysis, DependencyAnalysis, EntityGraph, GraphEdge, GraphNode
+from app.services.code_relationships import build_code_relationships
 from app.services.structural_relationships import (
     build_import_relationships,
     module_names_for_path,
@@ -109,6 +110,8 @@ def build_entity_graph(
                 )
 
     for edge in build_import_relationships(ast_analysis, dependencies or []):
+        _add_edge(edges, seen_edges, edge)
+    for edge in build_code_relationships(ast_analysis, dependencies or []):
         _add_edge(edges, seen_edges, edge)
 
     return EntityGraph(nodes=nodes, edges=edges)

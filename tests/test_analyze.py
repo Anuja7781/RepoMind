@@ -674,6 +674,233 @@ def test_entity_graph_preserves_has_method_relationship_with_imports():
     } in [edge.model_dump() for edge in graph.edges]
 
 
+def test_entity_graph_resolves_function_method_and_inheritance_relationships():
+    parser = ASTParser()
+    analyses = [
+        parser.analyze_source_file(
+            SourceFile(
+                path="backend/app/main.py",
+                language="python",
+                content=(
+                    "from app.helpers import helper as imported_helper\n"
+                    "from app.base import Base\n"
+                    "import app.helpers as helpers\n"
+                    "def caller():\n"
+                    "    imported_helper()\n"
+                    "    helpers.helper()\n"
+                    "class Child(Base):\n"
+                    "    def run(self):\n"
+                    "        self.validate()\n"
+                    "        imported_helper()\n"
+                    "    def validate(self):\n"
+                    "        pass\n"
+                ),
+            )
+        ),
+        parser.analyze_source_file(
+            SourceFile(
+                path="backend/app/helpers.py",
+                language="python",
+                content="def helper():\n    pass\n",
+            )
+        ),
+        parser.analyze_source_file(
+            SourceFile(
+                path="backend/app/base.py",
+                language="python",
+                content="class Base:\n    pass\n",
+            )
+        ),
+    ]
+    ast_analysis = [analysis for analysis in analyses if analysis is not None]
+    dependencies = DependencyAnalyzer().analyze(ast_analysis)
+    graph = build_entity_graph(ast_analysis, dependencies)
+
+    assert [edge.model_dump() for edge in graph.edges if edge.relationship == "calls"] == [
+        {
+            "source": "function:backend/app/main.py:caller:4",
+            "target": "function:backend/app/helpers.py:helper:1",
+            "relationship": "calls",
+        },
+        {
+            "source": "method:backend/app/main.py:Child.run:8",
+            "target": "method:backend/app/main.py:Child.validate:11",
+            "relationship": "calls",
+        },
+        {
+            "source": "method:backend/app/main.py:Child.run:8",
+            "target": "function:backend/app/helpers.py:helper:1",
+            "relationship": "calls",
+        },
+    ]
+    assert {
+        "source": "class:backend/app/main.py:Child:7",
+        "target": "class:backend/app/base.py:Base:1",
+        "relationship": "inherits",
+    } in [edge.model_dump() for edge in graph.edges]
+
+
+def test_code_relationships_resolve_relative_imported_symbols():
+    parser = ASTParser()
+    ast_analysis = [
+        parser.analyze_source_file(
+            SourceFile(
+                path="backend/app/routers/analysis.py",
+                language="python",
+                content=(
+                    "from ..helpers import helper\n"
+                    "from ..base import Base\n"
+                    "def caller():\n"
+                    "    helper()\n"
+                    "class Child(Base):\n"
+                    "    pass\n"
+                ),
+            )
+        ),
+        parser.analyze_source_file(
+            SourceFile(
+                path="backend/app/helpers.py",
+                language="python",
+                content="def helper():\n    pass\n",
+            )
+        ),
+        parser.analyze_source_file(
+            SourceFile(
+                path="backend/app/base.py",
+                language="python",
+                content="class Base:\n    pass\n",
+            )
+        ),
+    ]
+    analyses = [analysis for analysis in ast_analysis if analysis is not None]
+    dependencies = DependencyAnalyzer().analyze(analyses)
+    graph = build_entity_graph(analyses, dependencies)
+
+    assert {
+        "source": "function:backend/app/routers/analysis.py:caller:3",
+        "target": "function:backend/app/helpers.py:helper:1",
+        "relationship": "calls",
+    } in [edge.model_dump() for edge in graph.edges]
+    assert {
+        "source": "class:backend/app/routers/analysis.py:Child:5",
+        "target": "class:backend/app/base.py:Base:1",
+        "relationship": "inherits",
+    } in [edge.model_dump() for edge in graph.edges]
+
+
+def test_ast_parser_keeps_phase_three_metadata_out_of_api_fields():
+    analysis = ASTParser().analyze_source_file(
+        SourceFile(
+            path="app.py",
+            language="python",
+            content="def caller():\n    print('external')\n",
+        )
+    )
+
+    assert analysis is not None
+    assert analysis.model_dump() == {
+        "path": "app.py",
+        "language": "python",
+        "imports": [],
+        "classes": [],
+        "functions": ["caller"],
+        "function_details": [
+            {
+                "name": "caller",
+                "path": "app.py",
+                "line_number": 1,
+                "parameters": [],
+            }
+        ],
+        "class_details": [],
+    }
+    assert analysis.function_details[0].call_references[0].expression == "print"
+
+
+def test_code_relationships_skip_external_dynamic_and_ambiguous_references():
+    parser = ASTParser()
+    ast_analysis = [
+        parser.analyze_source_file(
+            SourceFile(
+                path="app/main.py",
+                language="python",
+                content=(
+                    "def caller():\n"
+                    "    print('external')\n"
+                    "    getattr(target, 'run')()\n"
+                    "    helper()\n"
+                    "class Child(ExternalBase):\n"
+                    "    pass\n"
+                ),
+            )
+        ),
+        parser.analyze_source_file(
+            SourceFile(
+                path="one/helpers.py",
+                language="python",
+                content="def helper():\n    pass\n",
+            )
+        ),
+        parser.analyze_source_file(
+            SourceFile(
+                path="two/helpers.py",
+                language="python",
+                content="def helper():\n    pass\n",
+            )
+        ),
+    ]
+    analyses = [analysis for analysis in ast_analysis if analysis is not None]
+    graph = build_entity_graph(analyses, [])
+
+    assert [edge for edge in graph.edges if edge.relationship in {"calls", "inherits"}] == []
+
+
+def test_code_relationships_deduplicate_recursive_calls_and_support_multiple_bases():
+    parser = ASTParser()
+    analysis = parser.analyze_source_file(
+        SourceFile(
+            path="app/models.py",
+            language="python",
+            content=(
+                "class First:\n"
+                "    pass\n"
+                "class Second:\n"
+                "    pass\n"
+                "class Child(First, Second):\n"
+                "    def run(self):\n"
+                "        self.run()\n"
+                "        self.run()\n"
+            ),
+        )
+    )
+
+    assert analysis is not None
+    graph = build_entity_graph([analysis], [])
+    code_edges = [
+        edge.model_dump()
+        for edge in graph.edges
+        if edge.relationship in {"calls", "inherits"}
+    ]
+
+    assert code_edges == [
+        {
+            "source": "class:app/models.py:Child:5",
+            "target": "class:app/models.py:First:1",
+            "relationship": "inherits",
+        },
+        {
+            "source": "class:app/models.py:Child:5",
+            "target": "class:app/models.py:Second:3",
+            "relationship": "inherits",
+        },
+        {
+            "source": "method:app/models.py:Child.run:6",
+            "target": "method:app/models.py:Child.run:6",
+            "relationship": "calls",
+        },
+    ]
+
+
 def test_dependency_analyzer_resolves_modules_inside_backend():
     dependencies = DependencyAnalyzer().analyze(
         [
