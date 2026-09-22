@@ -11,6 +11,7 @@ from app.services.ast_parser import ASTParser
 from app.services.config import get_github_token
 from app.services.dependency_analyzer import DependencyAnalyzer
 from app.services.dependency_graph import build_dependency_graph
+from app.services.entity_graph import build_entity_graph
 
 
 SOURCE_FILE_EXTENSIONS = {
@@ -114,6 +115,7 @@ class GitHubService:
             ast_analysis=ast_analysis,
             dependency_analysis=dependency_analysis,
             dependency_graph=build_dependency_graph(dependency_analysis, ast_analysis),
+            entity_graph=build_entity_graph(ast_analysis),
             architecture_analysis=ArchitectureAnalyzer().analyze(
                 ast_analysis,
                 dependency_analysis,

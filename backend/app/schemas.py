@@ -114,6 +114,11 @@ class DependencyGraph(BaseModel):
     edges: list[GraphEdge] = Field(default_factory=list)
 
 
+class EntityGraph(BaseModel):
+    nodes: list[GraphNode] = Field(default_factory=list)
+    edges: list[GraphEdge] = Field(default_factory=list)
+
+
 class ArchitectureComponent(BaseModel):
     name: str
     component_type: str
@@ -141,6 +146,7 @@ class RepositoryAnalysis(BaseModel):
     ast_analysis: list[ASTAnalysis] = Field(default_factory=list)
     dependency_analysis: list[DependencyAnalysis] = Field(default_factory=list)
     dependency_graph: DependencyGraph = Field(default_factory=DependencyGraph)
+    entity_graph: EntityGraph = Field(default_factory=EntityGraph)
     architecture_analysis: ArchitectureAnalysis = Field(
         default_factory=ArchitectureAnalysis
     )

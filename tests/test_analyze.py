@@ -3,12 +3,13 @@ import base64
 import httpx
 import pytest
 
-from app.schemas import ASTAnalysis, DependencyAnalysis, SourceFile
+from app.schemas import ASTAnalysis, ClassAnalysis, DependencyAnalysis, FunctionAnalysis, SourceFile
 from app.services.architecture_analyzer import ArchitectureAnalyzer
 from app.services.ast_parser import ASTParser
 from app.services.config import ConfigurationError
 from app.services.dependency_analyzer import DependencyAnalyzer
 from app.services.dependency_graph import build_dependency_graph
+from app.services.entity_graph import build_entity_graph
 from app.services.github_service import GitHubService
 
 
@@ -205,6 +206,52 @@ async def test_analyze_repository_includes_structure_and_source_files():
             }
         ],
     }
+    assert result.model_dump()["entity_graph"] == {
+        "nodes": [
+            {
+                "id": "file:src/app.py",
+                "label": "app.py",
+                "node_type": "file",
+            },
+            {
+                "id": "module:src.app",
+                "label": "src.app",
+                "node_type": "module",
+            },
+            {
+                "id": "file:src/helpers.py",
+                "label": "helpers.py",
+                "node_type": "file",
+            },
+            {
+                "id": "module:src.helpers",
+                "label": "src.helpers",
+                "node_type": "module",
+            },
+            {
+                "id": "function:src/helpers.py:greet:1",
+                "label": "greet",
+                "node_type": "function",
+            },
+        ],
+        "edges": [
+            {
+                "source": "file:src/app.py",
+                "target": "module:src.app",
+                "relationship": "contains",
+            },
+            {
+                "source": "file:src/helpers.py",
+                "target": "module:src.helpers",
+                "relationship": "contains",
+            },
+            {
+                "source": "module:src.helpers",
+                "target": "function:src/helpers.py:greet:1",
+                "relationship": "defines",
+            },
+        ],
+    }
     assert result.model_dump()["architecture_analysis"] == {
         "components": [
             {
@@ -385,6 +432,111 @@ def test_dependency_graph_prevents_duplicate_nodes_and_edges():
 
     assert len(graph.nodes) == 2
     assert len(graph.edges) == 1
+
+
+def test_entity_graph_extracts_files_modules_functions_classes_and_methods():
+    graph = build_entity_graph(
+        [
+            ASTAnalysis(
+                path="app/services/users.py",
+                language="python",
+                function_details=[
+                    FunctionAnalysis(
+                        name="build_user",
+                        path="app/services/users.py",
+                        line_number=8,
+                    )
+                ],
+                class_details=[
+                    ClassAnalysis(
+                        name="UserService",
+                        path="app/services/users.py",
+                        line_number=12,
+                        methods=[
+                            FunctionAnalysis(
+                                name="get_user",
+                                path="app/services/users.py",
+                                line_number=13,
+                            )
+                        ],
+                    )
+                ],
+            )
+        ]
+    )
+
+    assert [node.model_dump() for node in graph.nodes] == [
+        {
+            "id": "file:app/services/users.py",
+            "label": "users.py",
+            "node_type": "file",
+        },
+        {
+            "id": "module:app.services.users",
+            "label": "app.services.users",
+            "node_type": "module",
+        },
+        {
+            "id": "function:app/services/users.py:build_user:8",
+            "label": "build_user",
+            "node_type": "function",
+        },
+        {
+            "id": "class:app/services/users.py:UserService:12",
+            "label": "UserService",
+            "node_type": "class",
+        },
+        {
+            "id": "method:app/services/users.py:UserService.get_user:13",
+            "label": "get_user",
+            "node_type": "method",
+        },
+    ]
+    assert [edge.model_dump() for edge in graph.edges] == [
+        {
+            "source": "file:app/services/users.py",
+            "target": "module:app.services.users",
+            "relationship": "contains",
+        },
+        {
+            "source": "module:app.services.users",
+            "target": "function:app/services/users.py:build_user:8",
+            "relationship": "defines",
+        },
+        {
+            "source": "module:app.services.users",
+            "target": "class:app/services/users.py:UserService:12",
+            "relationship": "defines",
+        },
+        {
+            "source": "class:app/services/users.py:UserService:12",
+            "target": "method:app/services/users.py:UserService.get_user:13",
+            "relationship": "has_method",
+        },
+    ]
+
+
+def test_entity_graph_handles_init_modules_and_duplicate_entities():
+    analysis = ASTAnalysis(
+        path="backend/app/services/__init__.py",
+        language="python",
+        function_details=[
+            FunctionAnalysis(
+                name="configure",
+                path="backend/app/services/__init__.py",
+                line_number=2,
+            )
+        ],
+    )
+
+    graph = build_entity_graph([analysis, analysis])
+
+    assert [node.id for node in graph.nodes] == [
+        "file:backend/app/services/__init__.py",
+        "module:backend.app.services",
+        "function:backend/app/services/__init__.py:configure:2",
+    ]
+    assert len(graph.edges) == 2
 
 
 def test_dependency_analyzer_resolves_modules_inside_backend():
