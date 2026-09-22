@@ -11,6 +11,7 @@ from app.services.dependency_analyzer import DependencyAnalyzer
 from app.services.dependency_graph import build_dependency_graph
 from app.services.entity_graph import build_entity_graph
 from app.services.github_service import GitHubService
+from app.services.structural_relationships import build_import_relationships
 
 
 class MockResponse:
@@ -249,6 +250,11 @@ async def test_analyze_repository_includes_structure_and_source_files():
                 "source": "module:src.helpers",
                 "target": "function:src/helpers.py:greet:1",
                 "relationship": "defines",
+            },
+            {
+                "source": "module:src.app",
+                "target": "module:src.helpers",
+                "relationship": "imports",
             },
         ],
     }
@@ -537,6 +543,135 @@ def test_entity_graph_handles_init_modules_and_duplicate_entities():
         "function:backend/app/services/__init__.py:configure:2",
     ]
     assert len(graph.edges) == 2
+
+
+def test_structural_relationships_resolve_prefixed_paths_and_deduplicate_edges():
+    ast_analysis = [
+        ASTAnalysis(
+            path="backend/app/main.py",
+            language="python",
+            imports=["app.services.github_service"],
+        ),
+        ASTAnalysis(
+            path="backend/app/services/github_service.py",
+            language="python",
+        ),
+    ]
+    dependencies = [
+        DependencyAnalysis(
+            source_file="backend/app/main.py",
+            target_module="app.services.github_service",
+        ),
+        DependencyAnalysis(
+            source_file="backend/app/main.py",
+            target_module="app.services.github_service",
+        ),
+    ]
+
+    assert [edge.model_dump() for edge in build_import_relationships(ast_analysis, dependencies)] == [
+        {
+            "source": "module:backend.app.main",
+            "target": "module:backend.app.services.github_service",
+            "relationship": "imports",
+        }
+    ]
+
+
+def test_structural_relationships_skip_external_unresolved_and_ambiguous_imports():
+    ast_analysis = [
+        ASTAnalysis(
+            path="app/main.py",
+            language="python",
+            imports=["os", "httpx", "missing.module", "app.services.users"],
+        ),
+        ASTAnalysis(path="app/services/users.py", language="python"),
+        ASTAnalysis(path="backend/app/services/users.py", language="python"),
+    ]
+    dependencies = [
+        DependencyAnalysis(source_file="app/main.py", target_module="os"),
+        DependencyAnalysis(source_file="app/main.py", target_module="httpx"),
+        DependencyAnalysis(
+            source_file="app/main.py", target_module="missing.module"
+        ),
+        DependencyAnalysis(
+            source_file="app/main.py", target_module="app.services.users"
+        ),
+    ]
+
+    assert build_import_relationships(ast_analysis, dependencies) == []
+
+
+def test_structural_relationships_resolve_relative_and_init_modules():
+    ast_analysis = [
+        ASTAnalysis(
+            path="backend/app/routers/analysis.py",
+            language="python",
+            imports=["..services", ".helpers"],
+        ),
+        ASTAnalysis(path="backend/app/services/__init__.py", language="python"),
+        ASTAnalysis(path="backend/app/routers/helpers.py", language="python"),
+    ]
+    dependencies = [
+        DependencyAnalysis(
+            source_file="backend/app/routers/analysis.py",
+            target_module="app.services",
+        ),
+        DependencyAnalysis(
+            source_file="backend/app/routers/analysis.py",
+            target_module="app.routers.helpers",
+        ),
+    ]
+
+    assert [edge.model_dump() for edge in build_import_relationships(ast_analysis, dependencies)] == [
+        {
+            "source": "module:backend.app.routers.analysis",
+            "target": "module:backend.app.services",
+            "relationship": "imports",
+        },
+        {
+            "source": "module:backend.app.routers.analysis",
+            "target": "module:backend.app.routers.helpers",
+            "relationship": "imports",
+        },
+    ]
+
+
+def test_entity_graph_preserves_has_method_relationship_with_imports():
+    graph = build_entity_graph(
+        [
+            ASTAnalysis(
+                path="app/main.py",
+                language="python",
+                class_details=[
+                    ClassAnalysis(
+                        name="Service",
+                        path="app/main.py",
+                        line_number=1,
+                        methods=[
+                            FunctionAnalysis(
+                                name="run",
+                                path="app/main.py",
+                                line_number=2,
+                            )
+                        ],
+                    )
+                ],
+            ),
+            ASTAnalysis(path="app/helpers.py", language="python"),
+        ],
+        [
+            DependencyAnalysis(
+                source_file="app/main.py",
+                target_module="app.helpers",
+            )
+        ],
+    )
+
+    assert {
+        "source": "class:app/main.py:Service:1",
+        "target": "method:app/main.py:Service.run:2",
+        "relationship": "has_method",
+    } in [edge.model_dump() for edge in graph.edges]
 
 
 def test_dependency_analyzer_resolves_modules_inside_backend():

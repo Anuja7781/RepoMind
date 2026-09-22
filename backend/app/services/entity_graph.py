@@ -1,8 +1,14 @@
-from app.schemas import ASTAnalysis, EntityGraph, GraphEdge, GraphNode
-from app.services.dependency_graph import _module_names
+from app.schemas import ASTAnalysis, DependencyAnalysis, EntityGraph, GraphEdge, GraphNode
+from app.services.structural_relationships import (
+    build_import_relationships,
+    module_names_for_path,
+)
 
 
-def build_entity_graph(ast_analysis: list[ASTAnalysis]) -> EntityGraph:
+def build_entity_graph(
+    ast_analysis: list[ASTAnalysis],
+    dependencies: list[DependencyAnalysis] | None = None,
+) -> EntityGraph:
     nodes: list[GraphNode] = []
     edges: list[GraphEdge] = []
     seen_nodes: set[str] = set()
@@ -12,7 +18,7 @@ def build_entity_graph(ast_analysis: list[ASTAnalysis]) -> EntityGraph:
         if analysis.language != "python":
             continue
 
-        module_names = _module_names(analysis.path)
+        module_names = module_names_for_path(analysis.path)
         if not module_names:
             continue
 
@@ -101,6 +107,9 @@ def build_entity_graph(ast_analysis: list[ASTAnalysis]) -> EntityGraph:
                         relationship="has_method",
                     ),
                 )
+
+    for edge in build_import_relationships(ast_analysis, dependencies or []):
+        _add_edge(edges, seen_edges, edge)
 
     return EntityGraph(nodes=nodes, edges=edges)
 

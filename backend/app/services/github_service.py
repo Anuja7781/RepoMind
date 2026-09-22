@@ -115,7 +115,7 @@ class GitHubService:
             ast_analysis=ast_analysis,
             dependency_analysis=dependency_analysis,
             dependency_graph=build_dependency_graph(dependency_analysis, ast_analysis),
-            entity_graph=build_entity_graph(ast_analysis),
+            entity_graph=build_entity_graph(ast_analysis, dependency_analysis),
             architecture_analysis=ArchitectureAnalyzer().analyze(
                 ast_analysis,
                 dependency_analysis,
