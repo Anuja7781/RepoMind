@@ -258,21 +258,20 @@ async def test_analyze_repository_includes_structure_and_source_files():
             },
         ],
     }
-    assert result.model_dump()["architecture_analysis"] == {
-        "components": [
-            {
-                "name": "application",
-                "component_type": "Application",
-                "files": ["src/app.py"],
-            }
-        ],
-        "relationships": [
-            {
-                "source_file": "src/app.py",
-                "target_module": "src.helpers",
-            }
-        ],
+    architecture = result.architecture_analysis
+    assert [(component.name, component.files) for component in architecture.components] == [
+        ("Application", ["src/app.py"]),
+        ("Package", ["src/helpers.py", "src/logic.js"]),
+    ]
+    assert architecture.architecture_pattern == "Python package"
+    assert architecture.entry_point == "src/app.py"
+    assert architecture.primary_language == "python"
+    assert len(architecture.relationships) == 2
+    assert {(item.relationship_type, item.source_component, item.target_component) for item in architecture.relationships} == {
+        ("imports", "Application", "Package"),
+        ("calls", "Application", "Package"),
     }
+    assert all(item.supporting_files == ["src/app.py"] for item in architecture.relationships)
     assert mock_client.headers is None
 
 
@@ -768,36 +767,17 @@ def test_architecture_analyzer_detects_components_and_relationships():
         dependencies,
     )
 
-    assert [component.model_dump() for component in architecture.components] == [
-        {
-            "name": "routes",
-            "component_type": "Routes",
-            "files": ["app/routes/api.py"],
-        },
-        {
-            "name": "models",
-            "component_type": "Models",
-            "files": ["app/models/user.py"],
-        },
-        {
-            "name": "services",
-            "component_type": "Services",
-            "files": ["app/services/users.py"],
-        },
-        {
-            "name": "utlis",
-            "component_type": "Utilities",
-            "files": ["app/utlis/formatters.py"],
-        },
-        {
-            "name": "config",
-            "component_type": "Configuration",
-            "files": ["config.py"],
-        },
-        {
-            "name": "application",
-            "component_type": "Application",
-            "files": ["app.py", "app/main.py"],
-        },
+    assert [(component.name, component.component_type) for component in architecture.components] == [
+        ("API", "API"),
+        ("Data", "Data"),
+        ("Services", "Services"),
+        ("utlis", "Package"),
+        ("Configuration", "Configuration"),
+        ("Application", "Application"),
     ]
-    assert architecture.relationships == dependencies
+    assert architecture.relationships[0].source_component == "API"
+    assert architecture.relationships[0].target_component == "Services"
+    assert architecture.relationships[0].relationship_type == "imports"
+    assert architecture.relationships[0].label == "Imports / depends on"
+    assert architecture.relationships[0].evidence_count == 1
+    assert architecture.relationships[0].supporting_files == ["app/routes/api.py"]

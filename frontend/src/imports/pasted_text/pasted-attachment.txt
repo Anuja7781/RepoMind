@@ -1,0 +1,1523 @@
+IMPORTANT:
+I ALREADY HAVE A COMPLETE REPO MIND AI FRONTEND DESIGN IN FIGMA.
+
+DO NOT REBUILD THE WEBSITE FROM SCRATCH.
+
+Use the existing RepoMind AI design, layout, branding, components, navigation and visual language as the foundation.
+
+I want you to ENHANCE THE EXISTING WEBSITE by adding three major functional demo features.
+
+The final result must be a WORKING INTERACTIVE FRONTEND DEMO.
+
+Do not create static cards that only describe the features.
+
+Every major button, tab, input, graph and analysis action should work using realistic MOCK DATA.
+
+No real GitHub API or backend is required for the demo.
+
+The architecture should be structured so that a real FastAPI backend and GitHub API can later replace the mock data.
+
+==================================================
+PROJECT CONTEXT
+==================================================
+
+Project:
+
+RepoMind AI: An Agentic AI Framework for Intelligent GitHub Repository Analysis
+
+RepoMind analyzes GitHub repositories using:
+
+- Repository scanning
+- Static code analysis
+- AST parsing
+- Software metrics
+- Knowledge graphs
+- Dependency analysis
+- Architecture recovery
+- Multiple specialized AI agents
+- LangGraph-based agent orchestration
+- LLM reasoning
+- AI repository assistant
+
+Existing agents:
+
+1. Repository Analysis Agent
+2. Architecture Recovery Agent
+3. Code Quality Agent
+4. Security Analysis Agent
+5. Bug Prediction Agent
+6. Documentation Agent
+7. Recommendation Agent
+8. Chat Assistant Agent
+
+The existing website already demonstrates these concepts.
+
+DO NOT REMOVE ANY EXISTING FEATURES.
+
+The three new features below must be integrated into the existing RepoMind workflow.
+
+==================================================
+DESIGN REQUIREMENT
+==================================================
+
+Keep the existing visual identity but make the interface:
+
+- Clean
+- White
+- Professional
+- Technical
+- Research-oriented
+- Modern
+- Developer-focused
+
+Do NOT change it into a dark cyberpunk AI website.
+
+Use:
+
+- White backgrounds
+- Very light gray surfaces
+- Dark text
+- Indigo / blue accents
+- Subtle violet accents
+- Thin borders
+- Clean cards
+- Professional charts
+- Technical diagrams
+- Minimal shadows
+- Generous whitespace
+
+The website should look like a serious software engineering research prototype.
+
+==================================================
+CORE SYSTEM STORY
+==================================================
+
+The complete RepoMind workflow should visually communicate:
+
+USER
+ ↓
+GitHub Repository / Project Topic
+ ↓
+Repository Analysis
+ ↓
+Static Analysis
+ ↓
+AST + Metrics
+ ↓
+Knowledge Graph
+ ↓
+Agent Orchestrator
+ ↓
+Specialized AI Agents
+ ↓
+LLM Reasoning
+ ↓
+Repository Intelligence
+ ↓
+Insights / Comparison / Impact Analysis / AI Assistant
+
+==================================================
+FEATURE 1 — CHANGE IMPACT ANALYSIS
+==================================================
+
+Add a major feature called:
+
+# CHANGE IMPACT ANALYSIS
+
+Subtitle:
+
+"What happens if I change the code?"
+
+The purpose is to allow the developer to select a file, class, function or module and simulate a change.
+
+The system should answer:
+
+- What will be affected?
+- How will it be affected?
+- Which files depend on it?
+- Which functions depend on it?
+- Which APIs may be affected?
+- Which tests may fail?
+- Which modules may become risky?
+- What is the estimated impact level?
+
+This should be presented as a REAL INTERACTIVE DEMO.
+
+==================================================
+CHANGE IMPACT UI
+==================================================
+
+Create a page/tab:
+
+"Impact Analysis"
+
+Top section:
+
+Repository:
+example-project
+
+Repository Health:
+87 / 100
+
+Then:
+
+SELECT WHAT YOU WANT TO CHANGE
+
+Dropdown:
+
+[ PaymentService.ts ▼ ]
+
+Change Type:
+
+[ Modify Function ▼ ]
+
+Options:
+
+- Add File
+- Remove File
+- Modify File
+- Remove Function
+- Modify Function
+- Add Dependency
+- Remove Dependency
+- Change API
+
+Add a button:
+
+[ SIMULATE IMPACT ]
+
+==================================================
+IMPACT SIMULATION
+==================================================
+
+When the user clicks:
+
+SIMULATE IMPACT
+
+show an animated analysis process.
+
+Example:
+
+Repository Scanner ✓
+Dependency Graph ✓
+Call Graph ✓
+Knowledge Graph ✓
+Impact Analysis Agent ⟳
+Architecture Agent ⟳
+Bug Prediction Agent ⟳
+Test Impact Analysis ⟳
+LLM Reasoning ⟳
+
+Then display:
+
+ANALYSIS COMPLETE
+
+Impact Score:
+
+82 / 100
+
+Impact Level:
+
+HIGH
+
+==================================================
+IMPACT RESULTS
+==================================================
+
+Show:
+
+Files Affected
+14
+
+Functions Affected
+27
+
+Modules Affected
+6
+
+APIs Affected
+3
+
+Tests Potentially Affected
+8
+
+Dependencies Affected
+11
+
+Then show a visual dependency graph.
+
+Example:
+
+PaymentService
+      |
+      ├── used by → CheckoutService
+      |
+      ├── used by → OrderService
+      |
+      ├── used by → PaymentController
+      |
+      ├── tested by → PaymentTest
+      |
+      └── calls → PaymentGateway
+
+When the user hovers over a node:
+
+highlight its dependencies.
+
+When clicking a node:
+
+show:
+
+File:
+src/services/PaymentService.ts
+
+Relationship:
+Used by
+
+Affected because:
+PaymentService is directly called by CheckoutService.
+
+==================================================
+"HOW WILL IT AFFECT THE SYSTEM?"
+==================================================
+
+Add an explanation panel.
+
+Example:
+
+CHANGE:
+Remove PaymentService.ts
+
+PREDICTED IMPACT:
+
+1. CheckoutService will lose its payment dependency.
+2. PaymentController will become disconnected.
+3. 8 tests may fail.
+4. 3 API routes may require modification.
+5. Order processing may be affected.
+
+Risk:
+HIGH
+
+Confidence:
+89%
+
+==================================================
+AGENT INVOLVEMENT
+==================================================
+
+Show which agents contributed to the impact analysis.
+
+Example:
+
+Impact Analysis uses:
+
+✓ Repository Analysis Agent
+✓ Architecture Recovery Agent
+✓ Dependency Analysis
+✓ Bug Prediction Agent
+✓ Code Quality Agent
+✓ Recommendation Agent
+
+Display this as an "Agent Activity" panel.
+
+This is important because the professor should clearly see that this feature uses the existing Agentic AI architecture.
+
+==================================================
+FEATURE 2 — ARCHITECTURE DRIFT / DIFFERENCE ANALYSIS
+==================================================
+
+Add a major feature called:
+
+# ARCHITECTURE DIFFERENCE
+
+Subtitle:
+
+"Compare what the architecture says with what the code actually implements."
+
+The goal is NOT simply to display an architecture diagram.
+
+The system must compare:
+
+DOCUMENTED / INTENDED ARCHITECTURE
+
+versus
+
+ACTUAL IMPLEMENTED ARCHITECTURE
+
+This can use:
+
+- README
+- architecture documentation
+- project diagrams
+- configuration
+- source code
+- dependencies
+- imports
+- module relationships
+
+For the demo, use realistic mock data.
+
+==================================================
+ARCHITECTURE DIFFERENCE UI
+==================================================
+
+Create a page/tab:
+
+"Architecture Drift"
+
+Top:
+
+Repository:
+example-project
+
+Two panels side by side.
+
+LEFT:
+
+DOCUMENTED ARCHITECTURE
+
+Example:
+
+Frontend
+ ↓
+API Layer
+ ↓
+Service Layer
+ ↓
+Database
+
+RIGHT:
+
+IMPLEMENTED ARCHITECTURE
+
+Frontend
+ ↓
+API Layer
+ ↓
+Service Layer
+ ↘
+  Database
+  ↓
+LegacyUtils
+  ↓
+ExternalAPI
+
+Use different visual indicators for matching and unexpected relationships.
+
+==================================================
+DIFFERENCE DETECTION
+==================================================
+
+Highlight:
+
+GREEN:
+Architecture implemented as documented
+
+YELLOW:
+Unexpected dependency
+
+RED:
+Architecture violation
+
+Example:
+
+Documented:
+
+Frontend
+ ↓
+API
+ ↓
+Service
+ ↓
+Database
+
+Actual:
+
+Frontend
+ ↓
+API
+ ↓
+Service
+ ↓
+Database
+
+But:
+
+PaymentService
+ ─────────────→ Database
+
+This direct dependency bypasses the intended Service boundary.
+
+Show:
+
+ARCHITECTURE VIOLATION
+
+"PaymentService directly accesses Database, bypassing the intended Data Access Layer."
+
+==================================================
+ARCHITECTURE DIFFERENCE SCORE
+==================================================
+
+Show:
+
+Architecture Conformance:
+
+72 / 100
+
+Expected Components:
+12
+
+Implemented Components:
+14
+
+Unexpected Dependencies:
+5
+
+Missing Components:
+2
+
+Architecture Violations:
+4
+
+Drift Level:
+
+MEDIUM
+
+==================================================
+ARCHITECTURE DRIFT TIMELINE
+==================================================
+
+Add an optional timeline:
+
+2023 → 2024 → 2025 → 2026
+
+Show how the architecture changed.
+
+Example:
+
+2023:
+Architecture matches documentation
+
+2024:
+Minor dependency drift
+
+2025:
+3 unexpected dependencies
+
+2026:
+Architecture drift detected
+
+This should be interactive.
+
+When the user moves the timeline, update the architecture visualization.
+
+==================================================
+ARCHITECTURE AGENT
+==================================================
+
+Clearly show:
+
+Architecture Recovery Agent
+
+Input:
+Source code + dependencies + documentation
+
+Output:
+Implemented Architecture
+
+Then:
+
+Architecture Comparison Engine
+
+Output:
+Expected vs Implemented
+
+Then:
+
+Recommendation Agent
+
+Output:
+Suggested architectural improvements
+
+==================================================
+FEATURE 3 — MULTI-REPOSITORY ANALYSIS & GRADING
+==================================================
+
+Add a major new workflow:
+
+# FIND & COMPARE REPOSITORIES
+
+Subtitle:
+
+"Find relevant repositories, analyze them, compare them and identify the best match for your project."
+
+This should be accessible directly from the main dashboard/navigation.
+
+==================================================
+USER INPUT
+==================================================
+
+Create:
+
+PROJECT TOPIC
+
+Input box:
+
+"What project are you looking for?"
+
+Example:
+
+"AI based traffic management system"
+
+Additional filters:
+
+Programming Language:
+[ Python ▼ ]
+
+Difficulty:
+[ Intermediate ▼ ]
+
+Repository Size:
+[ Any ▼ ]
+
+Minimum Stars:
+[ Any ▼ ]
+
+Then button:
+
+[ FIND RELEVANT REPOSITORIES ]
+
+==================================================
+SEARCH SIMULATION
+==================================================
+
+When clicked, simulate:
+
+Understanding project topic...
+✓ Topic understood
+
+Searching GitHub...
+✓ 24 repositories found
+
+Filtering repositories...
+✓ 12 relevant repositories
+
+Running repository analysis...
+✓ Top 5 selected
+
+Activating AI agents...
+✓ Analysis started
+
+Ranking repositories...
+⟳ Calculating relevance scores
+
+Then display:
+
+FOUND 5 RELEVANT REPOSITORIES
+
+==================================================
+MULTI-REPOSITORY CARDS
+==================================================
+
+Show repository cards.
+
+Example:
+
+1.
+
+TrafficMind-AI
+
+Score:
+92 / 100
+
+Topic Relevance:
+96%
+
+Architecture:
+91
+
+Code Quality:
+87
+
+Documentation:
+94
+
+Security:
+89
+
+Activity:
+93
+
+[ View Analysis ]
+
+[ Compare ]
+
+------------------------------------------------
+
+2.
+
+SmartTraffic-System
+
+Score:
+87 / 100
+
+Topic Relevance:
+91%
+
+Architecture:
+85
+
+Code Quality:
+89
+
+Documentation:
+79
+
+Security:
+90
+
+Activity:
+88
+
+[ View Analysis ]
+
+[ Compare ]
+
+------------------------------------------------
+
+3.
+
+AI-Traffic-Control
+
+Score:
+81 / 100
+
+etc.
+
+==================================================
+REPOSITORY GRADING
+==================================================
+
+DO NOT make the score look like a random AI-generated number.
+
+Show an explainable score.
+
+Example:
+
+REPO MIND SCORE
+
+92 / 100
+
+Breakdown:
+
+Topic Relevance      96
+Architecture         91
+Code Quality         87
+Documentation        94
+Security             89
+Maintainability      90
+Activity             93
+
+Allow the user to click any score.
+
+Example:
+
+Topic Relevance: 96
+
+Show:
+
+✓ Same problem domain
+✓ Similar AI approach
+✓ Python implementation
+✓ Traffic signal optimization
+✓ Computer vision component
+
+==================================================
+"RELEVANCE VS NEED"
+==================================================
+
+This is important.
+
+The grading should consider not only popularity but:
+
+- Relevance to user's topic
+- Feature similarity
+- Architecture suitability
+- Code quality
+- Documentation
+- Security
+- Maintainability
+- Activity
+- Technology compatibility
+- Project complexity
+
+Create a section:
+
+WHY THIS REPOSITORY?
+
+Example:
+
+"Recommended because it matches 6 of your 7 requested project characteristics and has a well-structured architecture."
+
+==================================================
+MULTI-REPOSITORY COMPARISON
+==================================================
+
+Allow the user to select 2–5 repositories.
+
+Button:
+
+[ COMPARE SELECTED ]
+
+Show a comparison dashboard.
+
+Columns:
+
+Repository A
+Repository B
+Repository C
+
+Rows:
+
+Overall Score
+Topic Relevance
+Architecture
+Code Quality
+Security
+Documentation
+Maintainability
+Activity
+Complexity
+Dependencies
+Testing
+
+Use visual indicators:
+
+✓ Strong
+
+△ Moderate
+
+⚠ Weak
+
+==================================================
+COMPARATIVE ARCHITECTURE
+==================================================
+
+Show architecture diagrams for the selected repositories.
+
+Example:
+
+REPOSITORY A
+
+Frontend
+ ↓
+FastAPI
+ ↓
+ML Engine
+ ↓
+Database
+
+REPOSITORY B
+
+React
+ ↓
+Node.js
+ ↓
+ML Service
+ ↓
+MongoDB
+
+REPOSITORY C
+
+Streamlit
+ ↓
+Python
+ ↓
+ML Model
+
+Allow clicking a repository to inspect its complete RepoMind analysis.
+
+==================================================
+MULTI-REPO AGENT ANALYSIS
+==================================================
+
+This is critical.
+
+The same specialized agents should analyze EACH repository.
+
+Example:
+
+Repository A:
+
+✓ Architecture Agent
+✓ Quality Agent
+✓ Security Agent
+✓ Bug Prediction Agent
+✓ Documentation Agent
+
+Repository B:
+
+✓ Architecture Agent
+✓ Quality Agent
+✓ Security Agent
+✓ Bug Prediction Agent
+✓ Documentation Agent
+
+Repository C:
+
+...
+
+Show an Agent Comparison panel.
+
+==================================================
+REPOSITORY RECOMMENDATION
+==================================================
+
+At the end, generate:
+
+# RECOMMENDED REPOSITORY
+
+TrafficMind-AI
+
+RepoMind Score:
+92 / 100
+
+WHY?
+
+- Highest topic relevance
+- Strong architecture
+- Good documentation
+- Active development
+- Lower technical debt
+- Strong testing
+- Suitable complexity
+
+Then:
+
+[ VIEW FULL ANALYSIS ]
+
+==================================================
+INTEGRATE THIS WITH EXISTING FEATURES
+==================================================
+
+The new features must NOT exist as isolated pages.
+
+They should connect to the existing RepoMind system.
+
+For example:
+
+From a repository comparison:
+
+[ Analyze Repository ]
+
+opens the existing complete repository analysis.
+
+Then the user can access:
+
+Overview
+Architecture
+Dependencies
+Knowledge Graph
+Code Quality
+Security
+Bug Prediction
+Documentation
+Recommendations
+AI Assistant
+Impact Analysis
+Architecture Drift
+
+==================================================
+MAIN NAVIGATION
+==================================================
+
+Update navigation to:
+
+RepoMind AI
+
+Overview
+Analyze
+Compare Repositories
+Impact Analysis
+Architecture Drift
+Knowledge Graph
+Agents
+Insights
+AI Assistant
+
+Use a clean professional navbar.
+
+==================================================
+DASHBOARD
+==================================================
+
+Enhance the existing dashboard.
+
+Show:
+
+Repository:
+example-project
+
+Health:
+87 / 100
+
+Architecture:
+91
+
+Code Quality:
+82
+
+Security:
+76
+
+Bug Risk:
+71
+
+Documentation:
+68
+
+Architecture Conformance:
+72
+
+Impact Risk:
+Medium
+
+Then show:
+
+- Agent Activity
+- Architecture graph
+- Knowledge graph
+- Security findings
+- Bug risk
+- Recent changes
+- Impact analysis shortcut
+- Architecture drift shortcut
+
+==================================================
+AGENTIC AI MUST BE VISIBLE
+==================================================
+
+Do NOT hide the agents.
+
+Create an "Agent Activity" component throughout the application.
+
+Example:
+
+AGENT ORCHESTRATOR
+
+● Repository Analysis Agent
+Completed
+
+● Architecture Recovery Agent
+Completed
+
+● Code Quality Agent
+Completed
+
+● Security Analysis Agent
+Completed
+
+● Bug Prediction Agent
+Completed
+
+● Documentation Agent
+Completed
+
+● Recommendation Agent
+Completed
+
+● Chat Assistant Agent
+Ready
+
+When a demo analysis runs, animate the agents changing:
+
+Waiting
+→ Analyzing
+→ Reasoning
+→ Completed
+
+This should make the Agentic AI architecture obvious during the presentation.
+
+==================================================
+KNOWLEDGE GRAPH
+==================================================
+
+Keep the existing Knowledge Graph functionality.
+
+Make it interactive.
+
+Nodes:
+
+Repository
+File
+Class
+Function
+Module
+API
+Database
+Test
+
+Relationships:
+
+contains
+imports
+calls
+depends on
+uses
+tested by
+
+Click a node:
+
+Show details in a side panel.
+
+==================================================
+AI ASSISTANT
+==================================================
+
+Keep the existing AI Repository Assistant.
+
+Enhance it so it can answer questions about:
+
+- Repository architecture
+- Dependencies
+- Security
+- Code quality
+- Bug risk
+- Impact analysis
+- Architecture drift
+- Multi-repository comparison
+
+Example:
+
+USER:
+"What happens if I remove PaymentService?"
+
+ASSISTANT:
+"14 files and 27 functions are potentially affected. 8 tests may require modification and 3 API routes depend on the service."
+
+Another:
+
+USER:
+"Why is Repository A ranked higher than Repository B?"
+
+ASSISTANT:
+"Repository A has higher topic relevance, stronger documentation and lower architectural complexity."
+
+==================================================
+DEMO MODE
+==================================================
+
+THIS IS VERY IMPORTANT.
+
+The website must work as a complete clickable demo WITHOUT a real backend.
+
+Create realistic mock data.
+
+The following should work:
+
+1. Analyze Repository
+2. Run analysis
+3. Show progress
+4. Activate agents
+5. Display repository metrics
+6. Open architecture
+7. Open knowledge graph
+8. Run impact simulation
+9. Show affected files
+10. Show architecture drift
+11. Search project topic
+12. Display multiple repositories
+13. Grade repositories
+14. Compare repositories
+15. Open repository analysis
+16. Ask AI assistant questions
+17. Show generated answers
+
+Do NOT leave buttons that do nothing.
+
+Every important interaction should produce a visible result.
+
+==================================================
+MOCK REPOSITORY DATA
+==================================================
+
+Create at least 3 realistic repositories for the demo.
+
+Example:
+
+Repository A:
+TrafficMind-AI
+
+Repository B:
+SmartTraffic-Control
+
+Repository C:
+Intelligent-Traffic-System
+
+Each should have:
+
+- Different scores
+- Different architecture
+- Different code quality
+- Different security findings
+- Different documentation quality
+- Different dependencies
+- Different bug risks
+
+Make the differences believable.
+
+==================================================
+MOCK CHANGE IMPACT DATA
+==================================================
+
+For example:
+
+Selected:
+PaymentService.ts
+
+Change:
+Remove File
+
+Results:
+
+Impact:
+HIGH
+
+Files affected:
+14
+
+Functions:
+27
+
+Modules:
+6
+
+APIs:
+3
+
+Tests:
+8
+
+Dependencies:
+11
+
+Use realistic dependency relationships in the graph.
+
+==================================================
+MOCK ARCHITECTURE DRIFT DATA
+==================================================
+
+Expected:
+
+Frontend
+ ↓
+API
+ ↓
+Service
+ ↓
+Repository
+ ↓
+Database
+
+Actual:
+
+Frontend
+ ↓
+API
+ ↓
+Service
+ ↓
+Repository
+ ↓
+Database
+
+But include:
+
+PaymentService → Database
+
+as an architectural violation.
+
+Show:
+
+Architecture Conformance:
+72%
+
+Drift:
+MEDIUM
+
+Violations:
+4
+
+==================================================
+TECHNICAL IMPLEMENTATION
+==================================================
+
+If generating code:
+
+Prefer:
+
+React
+TypeScript
+Vite
+Tailwind CSS
+Framer Motion
+React Flow / D3.js
+Lucide Icons
+
+Use component-based architecture.
+
+Suggested components:
+
+Navbar
+Dashboard
+RepositoryAnalyzer
+AnalysisProgress
+AgentActivity
+RepositoryOverview
+ArchitectureGraph
+KnowledgeGraph
+ImpactAnalysis
+ImpactGraph
+ArchitectureDrift
+ExpectedArchitecture
+ImplementedArchitecture
+RepositoryDiscovery
+RepositorySearch
+RepositoryCard
+RepositoryComparison
+RepositoryScore
+AgentComparison
+MetricsDashboard
+SecurityAnalysis
+BugPrediction
+Documentation
+RepositoryAssistant
+
+Keep the code modular.
+
+Do not put the entire website into one component.
+
+==================================================
+REAL BACKEND READY
+==================================================
+
+Structure the mock data and service calls so they can later be replaced by:
+
+FastAPI backend
+GitHub API
+GitPython
+Tree-sitter
+Python AST
+Neo4j / NetworkX
+LangGraph
+Gemini 2.5 Flash
+
+For now, mock all backend responses.
+
+Create clean API/service abstraction such as:
+
+analyzeRepository()
+getKnowledgeGraph()
+getImpactAnalysis()
+getArchitectureDrift()
+searchRepositories()
+compareRepositories()
+getAgentStatus()
+askRepositoryAssistant()
+
+These can return mock data now.
+
+==================================================
+PRESENTATION MODE
+==================================================
+
+Create a smooth demo flow that I can show to my professor.
+
+The ideal demo should be:
+
+STEP 1
+
+Open RepoMind dashboard.
+
+STEP 2
+
+Enter:
+
+https://github.com/example/traffic-project
+
+Click:
+
+Analyze Repository
+
+STEP 3
+
+Show:
+
+Repository Scanner
+AST
+Knowledge Graph
+Agent Orchestrator
+Agents
+
+STEP 4
+
+Show:
+
+Architecture
+Code Quality
+Security
+Bug Risk
+Documentation
+
+STEP 5
+
+Open:
+
+Impact Analysis
+
+Select:
+
+TrafficController.py
+
+Change:
+
+Remove Function
+
+Click:
+
+Simulate Impact
+
+Show affected modules, files, APIs and tests.
+
+STEP 6
+
+Open:
+
+Architecture Drift
+
+Show:
+
+Documented Architecture
+vs
+Implemented Architecture
+
+Highlight the differences.
+
+STEP 7
+
+Open:
+
+Find & Compare Repositories
+
+Enter:
+
+"AI based traffic management system"
+
+Show multiple repositories being searched and analyzed.
+
+STEP 8
+
+Show:
+
+Repository scores
+
+STEP 9
+
+Select 3 repositories.
+
+Click:
+
+Compare
+
+Show comparison.
+
+STEP 10
+
+Show:
+
+Recommended Repository
+
+with explanation of why it is the best match.
+
+STEP 11
+
+Open AI Assistant.
+
+Ask:
+
+"Why is Repository A better than Repository B?"
+
+Show an evidence-based response.
+
+==================================================
+IMPORTANT
+==================================================
+
+The frontend should make these three new research-oriented capabilities immediately visible:
+
+1. CHANGE IMPACT ANALYSIS
+
+"What will happen if I change this code?"
+
+2. ARCHITECTURE DIFFERENCE / DRIFT
+
+"What architecture was intended versus what is actually implemented?"
+
+3. MULTI-REPOSITORY INTELLIGENCE
+
+"Which repositories are relevant to my project, how do they compare, and which one is the best fit?"
+
+But these must be integrated into the original RepoMind AI system.
+
+The final conceptual flow should be:
+
+                    REPO MIND AI
+                         │
+        ┌────────────────┼────────────────┐
+        │                │                │
+        ▼                ▼                ▼
+   ANALYZE REPO    IMPACT ANALYSIS   FIND/COMPARE
+        │                │                │
+        └────────────────┼────────────────┘
+                         ▼
+                REPOSITORY ANALYSIS
+                         │
+                         ▼
+                  STATIC ANALYSIS
+                         │
+                         ▼
+                  KNOWLEDGE GRAPH
+                         │
+                         ▼
+                AGENT ORCHESTRATOR
+                         │
+       ┌────────┬───────┼───────┬────────┐
+       ▼        ▼       ▼       ▼        ▼
+    ARCH      QUALITY SECURITY BUG   DOCUMENTATION
+    AGENT      AGENT    AGENT   AGENT     AGENT
+                         │
+                         ▼
+                    LLM REASONING
+                         │
+                         ▼
+              REPOSITORY INTELLIGENCE
+                         │
+       ┌─────────────────┼─────────────────┐
+       ▼                 ▼                 ▼
+ Architecture       Impact Analysis   Repository Ranking
+   Recovery          + Risk Prediction    + Comparison
+       │                 │                 │
+       └─────────────────┼─────────────────┘
+                         ▼
+                  AI DEVELOPER ASSISTANT
+
+FINAL REQUIREMENT:
+
+Make this a polished, fully interactive DEMO.
+
+Do not simply add text describing these features.
+
+I need to be able to click through the complete workflow and demonstrate it live to my professor.
+
+Keep the existing Figma design and enhance it rather than replacing it.

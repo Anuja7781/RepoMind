@@ -93,6 +93,7 @@ class ASTParser:
 
         module = "." * node.level + (node.module or "")
         return [
-            f"{module}.{alias.name}" if module else alias.name
+            f"{module}{'.' if module and not module.endswith('.') else ''}{alias.name}"
+            if module else alias.name
             for alias in node.names
         ]

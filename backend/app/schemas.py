@@ -120,14 +120,118 @@ class EntityGraph(BaseModel):
 
 
 class ArchitectureComponent(BaseModel):
+    id: str | None = None
     name: str
     component_type: str
     files: list[str] = Field(default_factory=list)
+    source_file_count: int = 0
+    representative_path: str | None = None
+    confidence: str = "medium"
+
+
+class ArchitectureRelationship(BaseModel):
+    source: str | None = None
+    target: str | None = None
+    source_component: str
+    target_component: str
+    relationship_type: str = "imports"
+    label: str = "Imports"
+    evidence_count: int = 0
+    evidence: list[DependencyAnalysis] = Field(default_factory=list)
+    confidence: str = "medium"
+    supporting_files: list[str] = Field(default_factory=list)
 
 
 class ArchitectureAnalysis(BaseModel):
     components: list[ArchitectureComponent] = Field(default_factory=list)
-    relationships: list[DependencyAnalysis] = Field(default_factory=list)
+    relationships: list[ArchitectureRelationship] = Field(default_factory=list)
+    architecture_pattern: str = "Repository structure"
+    confidence: str = "low"
+    entry_point: str | None = None
+    primary_language: str | None = None
+    description: str = "Architecture inferred from the analyzed repository evidence."
+    evidence: list[str] = Field(default_factory=list)
+    architecture_basis: str = "Source-recovered architecture"
+    documentation_available: bool = False
+
+
+class SecurityFinding(BaseModel):
+    id: str
+    severity: str
+    category: str
+    title: str
+    file: str
+    line: int | None = None
+    evidence: str
+    description: str
+    recommendation: str
+    confidence: str
+
+
+class SecurityAnalysis(BaseModel):
+    summary: str = "Static analysis"
+    findings: list[SecurityFinding] = Field(default_factory=list)
+    total_findings: int = 0
+    critical_count: int = 0
+    high_count: int = 0
+    medium_count: int = 0
+    low_count: int = 0
+    files_scanned: int = 0
+    rules_triggered: list[str] = Field(default_factory=list)
+
+
+class MetricsAnalysis(BaseModel):
+    total_repository_items: int
+    source_files: int
+    ast_analyzed_files: int
+    dependency_edges: int
+    entity_nodes: int
+    entity_relationships: int
+    architecture_components: int
+    architecture_relationships: int
+    language_file_counts: dict[str, int] = Field(default_factory=dict)
+    file_type_counts: dict[str, int] = Field(default_factory=dict)
+    directory_count: int
+    total_functions: int
+    total_classes: int
+    total_methods: int
+    total_imports: int
+    ast_coverage_percent: float | None = None
+    dependency_density: float | None = None
+    average_entity_degree: float | None = None
+    architecture_connectivity: float | None = None
+    stars: int
+    forks: int
+    repository_size: int
+    default_branch: str
+    owner: str
+    name: str
+
+
+class DocumentationSection(BaseModel):
+    total: int
+    documented: int
+    coverage: float | None = None
+
+
+class ReadmeAnalysis(BaseModel):
+    exists: bool
+    lines: int | None = None
+    word_count: int | None = None
+
+
+class DocumentationAnalysis(BaseModel):
+    source_files: int
+    ast_files: int
+    ast_coverage_percent: float | None = None
+    readme: ReadmeAnalysis
+    documentation_files: int
+    functions: DocumentationSection
+    classes: DocumentationSection
+    methods: DocumentationSection
+    todo_count: int
+    fixme_count: int
+    source_comment_lines: int
 
 
 class RepositoryAnalysis(BaseModel):
@@ -150,3 +254,6 @@ class RepositoryAnalysis(BaseModel):
     architecture_analysis: ArchitectureAnalysis = Field(
         default_factory=ArchitectureAnalysis
     )
+    security_analysis: SecurityAnalysis = Field(default_factory=SecurityAnalysis)
+    metrics: MetricsAnalysis | None = None
+    documentation_analysis: DocumentationAnalysis | None = None

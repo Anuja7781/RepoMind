@@ -12,6 +12,9 @@ from app.services.config import get_github_token
 from app.services.dependency_analyzer import DependencyAnalyzer
 from app.services.dependency_graph import build_dependency_graph
 from app.services.entity_graph import build_entity_graph
+from app.services.documentation_analyzer import DocumentationAnalyzer
+from app.services.metrics_analyzer import build_metrics
+from app.services.security_analyzer import SecurityAnalyzer
 
 
 SOURCE_FILE_EXTENSIONS = {
@@ -101,7 +104,7 @@ class GitHubService:
         ]
         dependency_analysis = DependencyAnalyzer().analyze(ast_analysis)
 
-        return RepositoryAnalysis(
+        analysis = RepositoryAnalysis(
             name=repository_data["name"],
             owner=repository_data["owner"]["login"],
             description=repository_data.get("description"),
@@ -119,8 +122,13 @@ class GitHubService:
             architecture_analysis=ArchitectureAnalyzer().analyze(
                 ast_analysis,
                 dependency_analysis,
+                source_files,
             ),
         )
+        analysis.security_analysis = SecurityAnalyzer().analyze(source_files)
+        analysis.metrics = build_metrics(analysis)
+        analysis.documentation_analysis = DocumentationAnalyzer().analyze(analysis)
+        return analysis
 
     async def _fetch_source_files(
         self,

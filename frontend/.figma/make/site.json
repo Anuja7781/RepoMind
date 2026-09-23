@@ -1,0 +1,10 @@
+{
+  "description": "Transform complex GitHub repositories into actionable insights with AI-driven analysis, architecture recovery, and developer assistance for enhanced code understanding.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
