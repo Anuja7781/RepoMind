@@ -3,13 +3,15 @@ import { motion, AnimatePresence } from "framer-motion"
 import { GitBranch as GitBranchIcon, Loader2, CheckCircle2, ChevronRight, AlertTriangle, GitBranch, Star, GitFork } from "lucide-react"
 import { PRESET_REPOS, ANALYSIS_PHASES } from "@/data/mockRepo"
 import { useAnalysis } from "@/hooks/useAnalysis"
+import type { BugRiskSummary, RepositoryAnalysis } from "@/services/analysisApi"
+import { orchestrateAgents, type AgentResult } from "@/services/agentOrchestrator"
 import ArchitectureGraph from "./ArchitectureGraph"
 import KnowledgeGraph from "./KnowledgeGraph"
 import RepositoryTree from "./RepositoryTree"
 import SecurityPanel from "./SecurityPanel"
 import MetricsPanel from "./MetricsPanel"
 import DocumentationPanel from "./DocumentationPanel"
-import AIAssistant from "./AIAssistant"
+import AIInsights from "./AIInsights"
 
 // ─── Analysis Input ──────────────────────────────────────────────────────────
 function AnalysisInput({ repoUrl, setRepoUrl, onStart }: { repoUrl: string; setRepoUrl: (u: string) => void; onStart: () => void }) {
@@ -141,140 +143,112 @@ function AnalysisProgress({ currentPhase, phaseProgress, repoUrl }: {
   )
 }
 
-// ─── Agent Activity ───────────────────────────────────────────────────────────
-function AgentActivity({ agents }: { agents: ReturnType<typeof useAnalysis>["agents"] }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="max-w-3xl mx-auto mt-6"
-    >
-      <div className="font-mono text-xs text-gray-500 uppercase tracking-widest mb-3">AI Agent Activity</div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {agents.map(agent => (
-          <motion.div
-            key={agent.id}
-            layout
-            className="rounded-xl px-4 py-3 flex items-center gap-3 bg-[#0e0e1a] border transition-all duration-300"
-            style={{ borderColor: agent.status === "running" || agent.status === "analyzing" ? `${agent.color}40` : agent.status === "complete" ? `${agent.color}20` : "rgba(255,255,255,0.05)" }}
-          >
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-              style={{ backgroundColor: `${agent.color}15`, border: `1px solid ${agent.color}25` }}>
-              <span className="font-mono text-sm" style={{ color: agent.color }}>{agent.icon}</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-xs font-medium text-gray-300 truncate">{agent.name}</div>
-              <div className="text-xs text-gray-600 truncate">{agent.description}</div>
-              {(agent.status === "running" || agent.status === "analyzing") && (
-                <div className="mt-1 h-0.5 bg-white/10 rounded-full">
-                  <motion.div
-                    className="h-full rounded-full"
-                    style={{ backgroundColor: agent.color }}
-                    animate={{ width: `${agent.progress}%` }}
-                    transition={{ duration: 0.2 }}
-                  />
-                </div>
-              )}
-            </div>
-            <div className="shrink-0 text-right">
-              {agent.status === "complete" ? (
-                <div>
-                  <CheckCircle2 size={13} style={{ color: agent.color }} className="ml-auto mb-0.5" />
-                  <div className="font-mono text-xs" style={{ color: agent.color }}>{agent.findings} found</div>
-                </div>
-              ) : agent.status === "running" || agent.status === "analyzing" ? (
-                <Loader2 size={13} style={{ color: agent.color }} className="animate-spin ml-auto" />
-              ) : (
-                <div className="w-2 h-2 rounded-full bg-gray-700 ml-auto" />
-              )}
-            </div>
-          </motion.div>
-        ))}
-      </div>
-    </motion.div>
-  )
-}
-
 // ─── Agents tab ───────────────────────────────────────────────────────────────
-function AgentsTab() {
-  const AGENTS = [
-    { name: "Repository Analyzer",  purpose: "Scans structure, parses AST, maps all files", status: "complete",  color: "#818cf8", findings: 2400, task: "AST parsed 2,400 files" },
-    { name: "Architecture Agent",   purpose: "Recovers layers, groups, entry points",        status: "complete",  color: "#06b6d4", findings: 18,   task: "12 layers, 6 groups recovered" },
-    { name: "Dependency Agent",     purpose: "Maps import/export and coupling graph",         status: "complete",  color: "#a78bfa", findings: 486,  task: "486 dependency edges" },
-    { name: "Security Agent",       purpose: "Detects vulnerabilities and risk patterns",     status: "complete",  color: "#f87171", findings: 7,    task: "7 security findings" },
-    { name: "Bug Risk Agent",       purpose: "Predicts high-risk files and patterns",         status: "complete",  color: "#fb923c", findings: 12,   task: "12 high-risk modules" },
-    { name: "Documentation Agent",  purpose: "Analyzes and generates documentation intel",   status: "complete",  color: "#34d399", findings: 94,   task: "94 modules documented" },
-    { name: "Impact Agent",         purpose: "Models change propagation paths",               status: "complete",  color: "#fbbf24", findings: 8,    task: "8 impact paths modeled" },
-    { name: "Drift Agent",          purpose: "Compares design vs actual architecture",        status: "complete",  color: "#f472b6", findings: 4,    task: "4 drift violations detected" },
-    { name: "AI Assistant",         purpose: "Embeds knowledge into RAG for Q&A",            status: "complete",  color: "#67e8f9", findings: 1,    task: "Knowledge base ready" },
-  ]
+function AgentsTab({ repository }: { repository: RepositoryAnalysis }) {
+  const orchestration = orchestrateAgents(repository)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const selected = orchestration.agents.find(agent => agent.id === selectedId) ?? null
+  const colors: Record<string, string> = { repository: "#818cf8", architecture: "#06b6d4", dependencies: "#a78bfa", security: "#f87171", "bug-risk": "#fb923c", metrics: "#34d399", documentation: "#fbbf24", "knowledge-graph": "#22d3ee", reasoning: "#c4b5fd" }
+  const statusColor: Record<AgentResult["status"], string> = { READY: "#64748b", RUNNING: "#a5b4fc", COMPLETED: "#34d399", NO_DATA: "#fbbf24", FAILED: "#f87171" }
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       <div className="flex items-center gap-3 mb-5">
-        <div className="section-label">9 Specialized Agents</div>
+        <div className="section-label">Agent Pipeline · {orchestration.repository}</div>
         <div className="flex-1 h-px bg-[#1e1e35]" />
-        <span className="text-xs font-mono px-2 py-1 rounded" style={{ background: "rgba(52,211,153,0.08)", color: "#34d399", border: "1px solid rgba(52,211,153,0.2)" }}>All Complete</span>
+        <span className="text-xs font-mono px-2 py-1 rounded text-gray-400 border border-white/10">Deterministic inputs</span>
       </div>
-      {AGENTS.map((a, i) => (
-        <div key={a.name} className="flex items-center gap-4 px-4 py-3 rounded-xl agent-complete" style={{ border: "1px solid rgba(52,211,153,0.22)", animationDelay: `${i * 40}ms` }}>
-          <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: a.color }} />
+      <div className="space-y-2">
+      {orchestration.agents.map((agent, index) => (
+        <div key={agent.id}>
+          <button onClick={() => setSelectedId(selectedId === agent.id ? null : agent.id)} className="w-full text-left flex items-center gap-4 px-4 py-3 rounded-xl border border-white/[0.08] bg-[#0e0e1a] hover:border-white/20 transition-colors">
+          <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: colors[agent.id] }} />
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-semibold text-white">{a.name}</div>
-            <div className="text-xs text-gray-500">{a.purpose}</div>
+            <div className="text-sm font-semibold text-white">{agent.name}</div>
+            <div className="text-xs text-gray-500">Input: {agent.inputSource}</div>
           </div>
           <div className="text-right shrink-0">
-            <div className="font-mono text-xs" style={{ color: a.color }}>{a.findings.toLocaleString()} found</div>
-            <div className="text-xs text-gray-600">{a.task}</div>
+            <div className="font-mono text-xs" style={{ color: statusColor[agent.status] }}>{agent.status}</div>
+            <div className="text-xs text-gray-600">{agent.output}</div>
           </div>
-          <CheckCircle2 size={14} className="text-green-400 shrink-0" />
+          <div className="text-xs text-gray-500 shrink-0">{agent.evidenceCount} evidence</div>
+          </button>
+          {index < orchestration.agents.length - 1 && <div className="h-3 border-l border-dashed border-cyan-400/30 ml-5" />}
+          {selected?.id === agent.id && <div className="mt-2 ml-5 rounded-xl border border-cyan-400/15 bg-cyan-400/[0.03] p-4"><div className="text-xs text-gray-300">{agent.summary}</div><div className="mt-3 flex flex-wrap gap-2">{agent.evidence.map(item => <span key={item} className="rounded border border-white/10 px-2 py-1 text-xs text-gray-500">{item}</span>)}</div></div>}
         </div>
       ))}
+      </div>
+      <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 text-xs text-gray-500">AI Reasoning Agent is intentionally <span className="text-yellow-300">NO_DATA</span> until an LLM provider is configured. Deterministic analysis remains the source of truth.</div>
     </div>
   )
 }
 
 // ─── Bug Prediction tab ────────────────────────────────────────────────────────
-function BugPredictionTab() {
-  const HIGH_RISK = [
-    { file: "next-server.ts",      risk: 91, factors: ["Complexity 142", "14 couplings", "38% coverage"], lang: "TS" },
-    { file: "app/router/index.ts", risk: 78, factors: ["Complexity 98",  "9 couplings",  "52% coverage"], lang: "TS" },
-    { file: "lib/cache.ts",        risk: 71, factors: ["Complexity 74",  "11 couplings", "41% coverage"], lang: "TS" },
-    { file: "api/payment.ts",      risk: 65, factors: ["Complexity 61",  "7 couplings",  "28% coverage"], lang: "TS" },
-  ]
+function BugPredictionTab({ bugRisk: suppliedBugRisk }: { bugRisk?: BugRiskSummary | null }) {
+  if (!suppliedBugRisk || suppliedBugRisk.status === "unavailable" || suppliedBugRisk.status === "failed") {
+    return <div className="rounded-xl border border-white/[0.06] bg-[#0e0e1a] p-6 text-center text-sm text-gray-500">Bug Risk analysis unavailable. No risk findings are being inferred.</div>
+  }
+  if (suppliedBugRisk.status === "no_eligible_files") {
+    return <div className="rounded-xl border border-white/[0.06] bg-[#0e0e1a] p-6 text-center text-sm text-gray-500">Bug Risk analysis completed with 0 eligible files. No risk findings were inferred.</div>
+  }
+  const bugRisk = suppliedBugRisk
+  const groups = [
+    { label: "Critical Risk Files", level: "critical", color: "#f87171" },
+    { label: "High Risk Files", level: "high", color: "#fb923c" },
+    { label: "Medium Risk Files", level: "medium", color: "#fbbf24" },
+    { label: "Low Risk Files", level: "low", color: "#34d399" },
+  ] as const
+  const scoreColor = (score: number) => score >= 80 ? "#f87171" : score >= 60 ? "#fb923c" : score >= 30 ? "#fbbf24" : "#34d399"
   return (
     <div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
         {[
-          { label: "High Risk Files",  value: "4",  color: "#f87171" },
-          { label: "Medium Risk",      value: "12", color: "#fbbf24" },
-          { label: "Low Risk",         value: "78", color: "#34d399" },
+          { label: "Total analyzed files", value: bugRisk.total_files_analyzed, color: "#a5b4fc" },
+          { label: "High risk", value: bugRisk.high_risk_count, color: "#fb923c" },
+          { label: "Medium risk", value: bugRisk.medium_risk_count, color: "#fbbf24" },
+          { label: "Low risk", value: bugRisk.low_risk_count, color: "#34d399" },
+          { label: "Critical", value: bugRisk.critical_count, color: "#f87171" },
         ].map(s => (
           <div key={s.label} className="glass rounded-xl p-4 text-center">
-            <div className="font-mono font-black text-2xl" style={{ color: s.color }}>{s.value}</div>
+            <div className="font-mono font-black text-2xl" style={{ color: s.color }}>{s.value.toLocaleString()}</div>
             <div className="text-xs text-gray-500 mt-1">{s.label}</div>
           </div>
         ))}
       </div>
-      <div className="section-label mb-3">High Risk Files</div>
-      <div className="space-y-2">
-        {HIGH_RISK.map(f => (
-          <div key={f.file} className="flex items-center gap-4 px-4 py-3 glass rounded-xl">
-            <div className="font-mono text-xs px-1.5 py-0.5 rounded shrink-0" style={{ background: "rgba(91,80,240,0.12)", color: "#a5b4fc", border: "1px solid rgba(91,80,240,0.2)" }}>{f.lang}</div>
-            <div className="flex-1 min-w-0">
-              <div className="font-mono text-sm text-white">{f.file}</div>
-              <div className="flex gap-2 mt-1 flex-wrap">
-                {f.factors.map(fac => (
-                  <span key={fac} className="text-xs text-gray-500">{fac}</span>
-                ))}
-              </div>
-            </div>
-            <div className="text-right shrink-0">
-              <div className="font-mono font-black" style={{ color: f.risk > 80 ? "#f87171" : f.risk > 65 ? "#fbbf24" : "#34d399" }}>{f.risk}</div>
-              <div className="text-xs text-gray-600">risk</div>
+      <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-3 mb-6 text-xs text-gray-400">
+        Predicted Bug Risk uses deterministic static heuristics from this repository's source evidence. It does not prove that a defect exists.
+      </div>
+      {groups.map(group => {
+        const findings = bugRisk.findings.filter(finding => finding.level === group.level)
+        return (
+          <div key={group.level} className="mb-6">
+            <div className="section-label mb-3" style={{ color: group.color }}>{group.label} ({findings.length})</div>
+            <div className="space-y-2">
+              {findings.length === 0 && <div className="text-xs text-gray-600 px-1">No files in this risk level.</div>}
+              {findings.map(finding => (
+                <div key={finding.path} className="px-4 py-3 glass rounded-xl">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-mono text-sm text-white break-all">{finding.path}</div>
+                      <div className="flex gap-2 mt-2 flex-wrap text-xs text-gray-500">
+                        <span>Complexity: {String(finding.evidence.ast_complexity ?? "unavailable")}</span>
+                        <span>Coupling: {String(finding.evidence.dependency_count ?? 0)} deps / {String(finding.evidence.dependent_count ?? 0)} dependents</span>
+                        <span>Documentation: {finding.evidence.documentation_coverage_percent == null ? "unavailable" : `${finding.evidence.documentation_coverage_percent}%`}</span>
+                        <span>Security: {String(finding.evidence.security_finding_count ?? 0)} findings</span>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="font-mono font-black" style={{ color: scoreColor(finding.score) }}>{finding.score}</div>
+                      <div className="text-xs capitalize" style={{ color: scoreColor(finding.score) }}>{finding.level}</div>
+                    </div>
+                  </div>
+                  {finding.factors.length > 0 && <div className="flex gap-2 mt-3 flex-wrap">{finding.factors.map(factor => <span key={factor} className="text-xs text-gray-400 border border-white/[0.08] rounded px-2 py-1">{factor}</span>)}</div>}
+                  <div className="text-xs text-gray-500 mt-3">{finding.explanation} Confidence: {finding.confidence}.</div>
+                </div>
+              ))}
             </div>
           </div>
-        ))}
-      </div>
+        )
+      })}
     </div>
   )
 }
@@ -289,7 +263,7 @@ const RESULT_TABS = [
   { id: "agents",        label: "Agents" },
   { id: "bugs",          label: "Bug Prediction" },
   { id: "docs",          label: "Documentation" },
-  { id: "assistant",     label: "AI Assistant" },
+  { id: "assistant",     label: "AI Insights" },
 ]
 
 function ResultsView({ result, onReset }: {
@@ -326,6 +300,17 @@ function ResultsView({ result, onReset }: {
           </button>
         </div>
       </div>
+      {import.meta.env.DEV && (
+        <div className="mb-6 rounded-xl border border-cyan-400/20 bg-cyan-400/[0.04] px-4 py-3 text-xs text-cyan-200">
+          <div className="font-mono uppercase tracking-widest text-cyan-400">API source: CURRENT BACKEND</div>
+          <div className="mt-2 grid gap-1 text-gray-300 sm:grid-cols-4">
+            <span>Repository: {fullName}</span>
+            <span>Source files: {repository.source_files_count}</span>
+            <span>Security: {repository.security_analysis?.files_scanned ?? "unavailable"} scanned / {repository.security_analysis?.total_findings ?? "unavailable"} findings</span>
+            <span>Bug Risk: {repository.bug_risk_analysis?.files_analyzed ?? "unavailable"} analyzed</span>
+          </div>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-1 p-1 bg-white/[0.03] rounded-xl border border-white/[0.06] mb-6 overflow-x-auto">
@@ -406,8 +391,8 @@ function ResultsView({ result, onReset }: {
           {tab === "architecture" && (
             <div>
               <div className="flex items-center gap-4 mb-3 text-xs font-mono text-gray-500">
-                <span>Components: <strong className="text-gray-300">{repository.architecture_analysis.components.length}</strong></span>
-                <span>Relationships: <strong className="text-gray-300">{repository.architecture_analysis.relationships.length}</strong></span>
+                <span>Components: <strong className="text-gray-300">{repository.architecture_analysis?.components?.length ?? 0}</strong></span>
+                <span>Relationships: <strong className="text-gray-300">{repository.architecture_analysis?.relationships?.length ?? 0}</strong></span>
               </div>
               <ArchitectureGraph analysis={repository.architecture_analysis} />
             </div>
@@ -415,14 +400,10 @@ function ResultsView({ result, onReset }: {
           {tab === "knowledge"    && <KnowledgeGraph graph={repository.entity_graph} />}
           {tab === "security"     && <SecurityPanel analysis={repository.security_analysis} />}
           {tab === "metrics"      && <MetricsPanel metrics={repository.metrics} />}
-          {tab === "agents"       && <div className="glass rounded-2xl p-6"><AgentsTab /></div>}
-          {tab === "bugs"         && <div className="glass rounded-2xl p-6"><BugPredictionTab /></div>}
+          {tab === "agents"       && <div className="glass rounded-2xl p-6"><AgentsTab repository={repository} /></div>}
+          {tab === "bugs"         && <div className="glass rounded-2xl p-6"><BugPredictionTab bugRisk={repository.bug_risk_analysis} /></div>}
           {tab === "docs"         && <div className="glass rounded-2xl p-6"><DocumentationPanel analysis={repository.documentation_analysis} /></div>}
-          {tab === "assistant"    && (
-            <div className="glass rounded-2xl p-6">
-              <AIAssistant />
-            </div>
-          )}
+          {tab === "assistant"    && <div className="glass rounded-2xl p-6"><AIInsights repository={repository} /></div>}
         </motion.div>
       </AnimatePresence>
     </motion.div>
@@ -431,7 +412,7 @@ function ResultsView({ result, onReset }: {
 
 // ─── Repository Analyzer (main export) ───────────────────────────────────────
 export default function RepositoryAnalyzer({ initialUrl }: { initialUrl?: string }) {
-  const { state, phases, currentPhase, phaseProgress, agents, result, error, repoUrl, setRepoUrl, startAnalysis, reset } = useAnalysis()
+  const { state, phases, currentPhase, phaseProgress, result, error, repoUrl, setRepoUrl, startAnalysis, reset } = useAnalysis()
 
   // Pre-fill URL from hero if provided
   useEffect(() => { if (initialUrl) setRepoUrl(initialUrl) }, [initialUrl, setRepoUrl])

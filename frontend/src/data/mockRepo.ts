@@ -75,18 +75,6 @@ export interface SecurityFinding {
   expanded?: boolean
 }
 
-export interface ModuleRisk {
-  id: string
-  name: string
-  path: string
-  risk: "high" | "medium" | "low"
-  riskScore: number
-  complexity: number
-  coupling: number
-  coverage: number
-  churn: number
-}
-
 export interface Metric {
   label: string
   value: number
@@ -112,14 +100,6 @@ export interface AnalysisPhase {
   label: string
   description: string
   duration: number // ms
-}
-
-export interface ChatMessage {
-  id: string
-  role: "user" | "ai"
-  text: string
-  refs?: string[]
-  timestamp: string
 }
 
 // ─── Mock Data ───────────────────────────────────────────────────────────────
@@ -354,17 +334,6 @@ export const SECURITY_FINDINGS: SecurityFinding[] = [
   },
 ]
 
-export const MODULE_RISKS: ModuleRisk[] = [
-  { id: "r1", name: "next-server.ts",     path: "packages/next/src/server/next-server.ts",          risk: "high",   riskScore: 91, complexity: 142, coupling: 14, coverage: 38, churn: 82 },
-  { id: "r2", name: "webpack-config.ts",  path: "packages/next/src/build/webpack-config.ts",         risk: "high",   riskScore: 87, complexity: 118, coupling: 18, coverage: 22, churn: 74 },
-  { id: "r3", name: "router-server.ts",   path: "packages/next/src/server/app-router/router-server.ts", risk: "high", riskScore: 83, complexity: 96,  coupling: 11, coverage: 41, churn: 68 },
-  { id: "r4", name: "action-handler.ts",  path: "packages/next/src/server/app-render/action-handler.ts", risk: "high", riskScore: 78, complexity: 84,  coupling: 9,  coverage: 45, churn: 61 },
-  { id: "r5", name: "components.tsx",     path: "packages/next/src/client/components.tsx",            risk: "medium", riskScore: 64, complexity: 72,  coupling: 7,  coverage: 58, churn: 45 },
-  { id: "r6", name: "image.tsx",          path: "packages/next/src/client/app/image.tsx",             risk: "medium", riskScore: 58, complexity: 61,  coupling: 5,  coverage: 62, churn: 38 },
-  { id: "r7", name: "render-result.ts",   path: "packages/next/src/server/render-result.ts",          risk: "medium", riskScore: 52, complexity: 48,  coupling: 8,  coverage: 71, churn: 29 },
-  { id: "r8", name: "compiler.ts",        path: "packages/next/src/build/compiler.ts",                risk: "low",    riskScore: 34, complexity: 32,  coupling: 4,  coverage: 84, churn: 18 },
-]
-
 export const METRICS: Metric[] = [
   { label: "Health Score",      value: 74, unit: "/100",  trend: "up",   color: "#34d399", description: "Overall codebase health composite" },
   { label: "Avg Complexity",    value: 42, unit: "",       trend: "down", color: "#fbbf24", description: "Average cyclomatic complexity per function" },
@@ -374,54 +343,3 @@ export const METRICS: Metric[] = [
   { label: "Duplication",       value: 12, unit: "%",      trend: "stable", color: "#fb923c", description: "Code duplication detected by AST" },
 ]
 
-export const INITIAL_CHAT: ChatMessage[] = [
-  {
-    id: "welcome",
-    role: "ai",
-    text: "I've analyzed vercel/next.js. I have full context of its 2,400+ files, 94 modules, architecture layers, and dependency graph. Ask me anything about this repository.",
-    timestamp: "just now",
-  },
-]
-
-export const CANNED_RESPONSES: Record<string, { text: string; refs?: string[] }> = {
-  default: {
-    text: "Based on my analysis of the repository's knowledge graph and architecture model, this is a complex area spanning multiple modules. I'd recommend starting with the core server layer and tracing the call stack outward.",
-    refs: ["packages/next/src/server/next-server.ts", "packages/next/src/server/app-router/"],
-  },
-  "authentication": {
-    text: "Authentication in Next.js is handled at the middleware layer. The primary entry point is middleware.ts in the project root, which runs on the Edge Runtime. Session validation is typically delegated to libraries like NextAuth, but Next.js itself exposes cookies() and headers() in Server Components for auth checks.",
-    refs: ["packages/next/src/server/web/edge-function.ts", "packages/next/src/server/app-render/work-async-storage.external.ts"],
-  },
-  "payment": {
-    text: "No payment module detected in vercel/next.js — this is a framework repository. If you meant the PaymentService in a consuming app, the risk factors would be: high cyclomatic complexity, coupling with 6+ external modules, and multiple third-party API calls.",
-    refs: [],
-  },
-  "high risk": {
-    text: "The highest-risk module is next-server.ts (risk score: 91/100). It has cyclomatic complexity of 142, couples with 14 other modules, and has only 38% test coverage with 82 commits in the last 30 days. I recommend adding integration tests for the SSR pipeline.",
-    refs: ["packages/next/src/server/next-server.ts", "packages/next/src/server/app-render/"],
-  },
-  "architecture": {
-    text: "vercel/next.js follows a layered architecture: CLI → App/Pages Router → Next Server → Cache/RSC/Edge. The critical path is: incoming request → RouteHandler → AppRouter → NextServer → RenderResult. RSC streaming adds a parallel track through RSCPayload → serialized response.",
-    refs: ["packages/next/src/server/next-server.ts", "packages/next/src/server/app-router/router-server.ts"],
-  },
-  "dependencies": {
-    text: "The most depended-upon module is next-server.ts (14 afferent couplings). The highest fan-out module is webpack-config.ts (18 efferent couplings). The dependency graph contains 486 edges across 94 modules, with 3 circular dependency cycles detected.",
-    refs: ["packages/next/src/build/webpack-config.ts", "packages/next/src/server/"],
-  },
-  "security": {
-    text: "I found 7 security issues: 1 critical (prototype pollution in query parser), 2 high (path traversal, ReDoS), 2 medium (information disclosure, CSRF on Server Actions), 2 low (outdated dep, missing default security headers). The critical issue in parse-body.ts should be addressed immediately.",
-    refs: ["packages/next/src/server/api-utils/node/parse-body.ts", "packages/next/src/server/serve-static.ts"],
-  },
-  "webpack": {
-    text: "webpack-config.ts is the most complex build module (complexity: 118, coupling: 18). It manages Turbopack/Webpack configuration, handles RSC server/client splits, configures SWC transforms, and outputs multiple bundles. Its high complexity makes it high-risk.",
-    refs: ["packages/next/src/build/webpack-config.ts", "packages/next/src/build/compiler.ts"],
-  },
-}
-
-export function getAIResponse(query: string): { text: string; refs?: string[] } {
-  const lower = query.toLowerCase()
-  for (const [key, response] of Object.entries(CANNED_RESPONSES)) {
-    if (key !== "default" && lower.includes(key)) return response
-  }
-  return CANNED_RESPONSES.default
-}

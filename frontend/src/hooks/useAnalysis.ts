@@ -1,8 +1,4 @@
 import { useState, useCallback } from "react"
-import {
-  INITIAL_AGENTS,
-  type AgentStatus,
-} from "@/data/mockRepo"
 import { analyzeRepository, type RepositoryAnalysis } from "@/services/analysisApi"
 
 export type AnalysisState = "idle" | "running" | "complete" | "error"
@@ -26,7 +22,6 @@ export interface UseAnalysisReturn {
   phases: ReadonlyArray<AnalysisPhase>
   currentPhase: number
   phaseProgress: number
-  agents: AgentStatus[]
   result: AnalysisResult | null
   error: string | null
   repoUrl: string
@@ -40,7 +35,6 @@ export function useAnalysis(): UseAnalysisReturn {
   const [state, setState] = useState<AnalysisState>("idle")
   const [currentPhase, setCurrentPhase] = useState(0)
   const [phaseProgress, setPhaseProgress] = useState(0)
-  const [agents, setAgents] = useState<AgentStatus[]>(INITIAL_AGENTS)
   const [result, setResult] = useState<AnalysisResult | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -49,7 +43,6 @@ export function useAnalysis(): UseAnalysisReturn {
     setState("running")
     setCurrentPhase(0)
     setPhaseProgress(25)
-    setAgents(INITIAL_AGENTS)
     setResult(null)
 
     try {
@@ -72,10 +65,9 @@ export function useAnalysis(): UseAnalysisReturn {
     setState("idle")
     setCurrentPhase(0)
     setPhaseProgress(0)
-    setAgents(INITIAL_AGENTS)
     setResult(null)
     setError(null)
   }, [])
 
-  return { state, phases: ANALYSIS_PHASES, currentPhase, phaseProgress, agents, result, error, repoUrl, setRepoUrl, startAnalysis, reset }
+  return { state, phases: ANALYSIS_PHASES, currentPhase, phaseProgress, result, error, repoUrl, setRepoUrl, startAnalysis, reset }
 }

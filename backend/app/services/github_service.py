@@ -13,6 +13,7 @@ from app.services.dependency_analyzer import DependencyAnalyzer
 from app.services.dependency_graph import build_dependency_graph
 from app.services.entity_graph import build_entity_graph
 from app.services.documentation_analyzer import DocumentationAnalyzer
+from app.services.bug_risk_analyzer import BugRiskAnalyzer
 from app.services.metrics_analyzer import build_metrics
 from app.services.security_analyzer import SecurityAnalyzer
 
@@ -47,7 +48,14 @@ class GitHubAPIError(Exception):
 class GitHubService:
     api_base_url = "https://api.github.com"
 
+    def __init__(self) -> None:
+        self.source_skip_reasons: dict[str, int] = {}
+
+    def _skip_source(self, reason: str) -> None:
+        self.source_skip_reasons[reason] = self.source_skip_reasons.get(reason, 0) + 1
+
     async def analyze_repository(self, repository_url: str) -> RepositoryAnalysis:
+        self.source_skip_reasons = {}
         owner, repository = self._repository_parts(repository_url)
         endpoint = f"{self.api_base_url}/repos/{owner}/{repository}"
         github_token = get_github_token()
@@ -124,10 +132,22 @@ class GitHubService:
                 dependency_analysis,
                 source_files,
             ),
+            tree_item_count=len(tree_data.get("tree", [])),
+            source_files_count=len(source_files),
+            ast_files_count=len(ast_analysis),
+            source_files_skipped=sum(self.source_skip_reasons.values()),
+            source_skip_reasons=self.source_skip_reasons,
         )
         analysis.security_analysis = SecurityAnalyzer().analyze(source_files)
         analysis.metrics = build_metrics(analysis)
         analysis.documentation_analysis = DocumentationAnalyzer().analyze(analysis)
+        analysis.bug_risk_analysis = BugRiskAnalyzer().analyze(
+            source_files,
+            ast_analysis,
+            dependency_analysis,
+            analysis.entity_graph,
+            analysis.security_analysis,
+        )
         return analysis
 
     async def _fetch_source_files(
@@ -141,42 +161,52 @@ class GitHubService:
 
         for item in tree_items:
             if item.get("type") != "blob":
+                self._skip_source("not_blob")
                 continue
 
             path = item.get("path", "")
             if self._is_excluded_source_path(path):
+                self._skip_source("excluded_directory")
                 continue
 
             language = self._source_language(path)
             if not language:
+                self._skip_source("unsupported_extension")
                 continue
 
             file_size = item.get("size") or 0
             if file_size > 200_000:
+                self._skip_source("file_too_large")
                 continue
 
             if len(source_files) >= MAX_SOURCE_FILES:
+                self._skip_source("source_file_limit")
                 break
 
             if total_bytes + file_size > MAX_SOURCE_BYTES:
+                self._skip_source("source_byte_limit")
                 continue
 
             file_response = await client.get(
                 f"{endpoint}/contents/{quote(path, safe='')}"
             )
             if file_response.status_code == 404:
+                self._skip_source("content_not_found")
                 continue
             file_response.raise_for_status()
 
             file_payload = file_response.json()
             if not isinstance(file_payload, dict):
+                self._skip_source("invalid_content_payload")
                 continue
             if file_payload.get("type") != "file":
+                self._skip_source("content_not_file")
                 continue
 
             content = file_payload.get("content", "")
             encoding = file_payload.get("encoding")
             if encoding != "base64":
+                self._skip_source("unsupported_encoding")
                 continue
 
             try:

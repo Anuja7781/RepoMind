@@ -1,6 +1,5 @@
 import { useState } from "react"
-import { ChevronDown, ChevronRight, ShieldAlert, Shield } from "lucide-react"
-import { MODULE_RISKS } from "@/data/mockRepo"
+import { ChevronDown, ChevronRight, ShieldAlert } from "lucide-react"
 import type { SecurityAnalysis, SecurityFinding } from "@/services/analysisApi"
 
 const SEV_CONFIG = {
@@ -61,10 +60,22 @@ function FindingCard({ finding }: { finding: SecurityFinding }) {
   )
 }
 
-export default function SecurityPanel({ analysis }: { analysis: SecurityAnalysis }) {
-  const [tab, setTab] = useState<"findings" | "risk">("findings")
-  const sorted = [...analysis.findings].sort((a, b) => SEV_CONFIG[a.severity].order - SEV_CONFIG[b.severity].order)
-  const counts = { critical: analysis.critical_count, high: analysis.high_count, medium: analysis.medium_count, low: analysis.low_count }
+export default function SecurityPanel({ analysis }: { analysis?: SecurityAnalysis | null }) {
+  if (!analysis || analysis.status === "unavailable" || analysis.status === "failed") {
+    return <div className="rounded-xl border border-white/[0.06] bg-[#0e0e1a] p-6 text-center text-sm text-gray-500">Security analysis unavailable. No findings are being inferred.</div>
+  }
+  if (analysis.status === "no_eligible_files") {
+    return <div className="rounded-xl border border-white/[0.06] bg-[#0e0e1a] p-6 text-center text-sm text-gray-500">Security analysis completed with 0 eligible files. No findings were inferred.</div>
+  }
+  const findings = analysis?.findings ?? []
+  const sorted = [...findings].sort((a, b) => SEV_CONFIG[a.severity].order - SEV_CONFIG[b.severity].order)
+  const counts = {
+    critical: analysis?.critical_count ?? 0,
+    high: analysis?.high_count ?? 0,
+    medium: analysis?.medium_count ?? 0,
+    low: analysis?.low_count ?? 0,
+  }
+  const hasSecurityAnalysis = analysis != null
 
   return (
     <div className="space-y-4">
@@ -77,62 +88,15 @@ export default function SecurityPanel({ analysis }: { analysis: SecurityAnalysis
           </div>
         ))}
       </div>
-      <div className="text-xs text-gray-500">{analysis.summary} of {analysis.files_scanned} source files. {analysis.total_findings === 0 ? "No potential issues detected by the current static rules." : `Static analysis identified ${analysis.total_findings} potential security findings.`}</div>
-
-      {/* Tabs */}
-      <div className="flex gap-1 p-1 bg-white/[0.04] rounded-lg border border-white/[0.07] w-fit">
-        {(["findings", "risk"] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            className={`px-4 py-1.5 rounded-md text-xs font-medium capitalize transition-all ${tab === t ? "bg-violet-600/30 text-violet-300" : "text-gray-500 hover:text-gray-300"}`}>
-            {t === "findings" ? "Security Findings" : "Bug Risk Modules"}
-          </button>
-        ))}
+      <div className="text-xs text-gray-500">
+        {hasSecurityAnalysis
+          ? <>{analysis.summary} of {analysis.files_scanned} source files. {analysis.total_findings === 0 ? "No issues detected by the configured static rules." : `Configured static rules identified ${analysis.total_findings} potential security findings.`}</>
+          : "Security analysis is unavailable for this analysis result. No findings are being inferred."}
       </div>
 
-      {tab === "findings" ? (
-        sorted.length === 0
-          ? <div className="rounded-xl border border-white/[0.06] bg-[#0e0e1a] p-6 text-center text-sm text-gray-500">No potential issues detected by the current static rules.</div>
-          : <div className="space-y-2">{sorted.map(f => <FindingCard key={f.id} finding={f} />)}</div>
-      ) : (
-        <div className="space-y-2">
-          {MODULE_RISKS.map(mod => (
-            <div key={mod.id} className="rounded-xl p-4 bg-[#0e0e1a] border border-white/[0.06] hover:border-violet-500/20 transition-all">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: mod.risk === "high" ? "#ef4444" : mod.risk === "medium" ? "#fbbf24" : "#34d399" }} />
-                    <span className="text-sm font-medium text-white">{mod.name}</span>
-                    <span className="font-mono text-xs px-1.5 py-0.5 rounded" style={{
-                      backgroundColor: mod.risk === "high" ? "#ef444415" : mod.risk === "medium" ? "#fbbf2415" : "#34d39915",
-                      color: mod.risk === "high" ? "#ef4444" : mod.risk === "medium" ? "#fbbf24" : "#34d399",
-                    }}>{mod.risk} risk</span>
-                  </div>
-                  <div className="font-mono text-xs text-gray-600 mt-0.5 truncate max-w-xs">{mod.path}</div>
-                </div>
-                <div className="text-right">
-                  <div className="font-mono text-lg font-bold" style={{ color: mod.risk === "high" ? "#ef4444" : mod.risk === "medium" ? "#fbbf24" : "#34d399" }}>{mod.riskScore}</div>
-                  <div className="text-xs text-gray-600">risk score</div>
-                </div>
-              </div>
-              <div className="grid grid-cols-4 gap-2 mt-3">
-                {[["Complexity", mod.complexity, "#8b5cf6"], ["Coupling", mod.coupling, "#06b6d4"], ["Coverage", `${mod.coverage}%`, "#34d399"], ["Churn", mod.churn, "#fbbf24"]].map(([l, v, c]) => (
-                  <div key={l as string} className="text-center">
-                    <div className="font-mono text-xs font-semibold" style={{ color: c as string }}>{v}</div>
-                    <div className="text-xs text-gray-600">{l}</div>
-                  </div>
-                ))}
-              </div>
-              {/* Risk bar */}
-              <div className="mt-2 h-1 bg-white/10 rounded-full">
-                <div className="h-full rounded-full transition-all" style={{
-                  width: `${mod.riskScore}%`,
-                  backgroundColor: mod.risk === "high" ? "#ef4444" : mod.risk === "medium" ? "#fbbf24" : "#34d399",
-                }} />
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {sorted.length === 0
+        ? <div className="rounded-xl border border-white/[0.06] bg-[#0e0e1a] p-6 text-center text-sm text-gray-500">No issues detected by the configured static rules.</div>
+        : <div className="space-y-2">{sorted.map(f => <FindingCard key={f.id} finding={f} />)}</div>}
     </div>
   )
 }

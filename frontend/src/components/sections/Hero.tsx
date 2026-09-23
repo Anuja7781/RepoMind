@@ -127,7 +127,7 @@ function HeroViz() {
       </div>
       <div className="absolute bottom-6 left-0 font-mono leading-relaxed hidden xl:block select-none" style={{ fontSize: 10 }}>
         <div style={{ color: "rgba(71,85,105,0.6)" }}>// Recovering architecture...</div>
-        <div style={{ color: "rgba(71,85,105,0.5)" }}>// AST parsed: 2,400 files</div>
+        <div style={{ color: "rgba(71,85,105,0.5)" }}>// Evidence-backed analysis ready</div>
         <div style={{ color: "rgba(52,211,153,0.4)" }}>// Knowledge graph ready ✓</div>
       </div>
     </div>

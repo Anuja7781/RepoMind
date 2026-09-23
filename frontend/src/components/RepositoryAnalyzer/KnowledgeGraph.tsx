@@ -10,12 +10,14 @@ const TYPE_LABELS: Record<string, string> = { class: "Classes", module: "Modules
 const TYPE_COLORS: Record<string, string> = { file: "#06b6d4", module: "#8b5cf6", class: "#f59e0b", function: "#22c55e", method: "#a78bfa", interface: "#f472b6" }
 const EDGE_COLORS: Record<string, string> = { contains: "#64748b", defines: "#22c55e", imports: "#8b5cf6", has_method: "#f59e0b", depends_on: "#06b6d4" }
 
-function normalize(graph: EntityGraph): { nodes: EntityView[]; edges: EdgeView[] } {
+function normalize(graph?: EntityGraph | null): { nodes: EntityView[]; edges: EdgeView[] } {
+  const nodes = graph?.nodes ?? []
+  const edges = graph?.edges ?? []
   const degree = new Map<string, number>()
   graph.edges.forEach(edge => { degree.set(edge.source, (degree.get(edge.source) ?? 0) + 1); degree.set(edge.target, (degree.get(edge.target) ?? 0) + 1) })
   return {
-    nodes: graph.nodes.map(node => ({ ...node, type: (TYPE_LABELS[node.node_type] ? node.node_type : "module") as EntityType, degree: degree.get(node.id) ?? 0, x: 0, y: 0 })),
-    edges: graph.edges.map(edge => ({ ...edge, label: edge.relationship })),
+    nodes: nodes.map(node => ({ ...node, type: (TYPE_LABELS[node.node_type] ? node.node_type : "module") as EntityType, degree: degree.get(node.id) ?? 0, x: 0, y: 0 })),
+    edges: edges.map(edge => ({ ...edge, label: edge.relationship })),
   }
 }
 
@@ -85,7 +87,7 @@ function locationFor(node: EntityView) {
   return parts.length > 3 ? `${parts[1]}:${parts[parts.length - 1]}` : parts.slice(1).join(":")
 }
 
-export default function KnowledgeGraph({ graph }: { graph: EntityGraph }) {
+export default function KnowledgeGraph({ graph }: { graph?: EntityGraph | null }) {
   const { nodes, edges } = useMemo(() => normalize(graph), [graph])
   const [query, setQuery] = useState("")
   const [typeFilter, setTypeFilter] = useState("all")

@@ -157,6 +157,7 @@ class ArchitectureAnalysis(BaseModel):
 
 class SecurityFinding(BaseModel):
     id: str
+    rule: str
     severity: str
     category: str
     title: str
@@ -169,6 +170,7 @@ class SecurityFinding(BaseModel):
 
 
 class SecurityAnalysis(BaseModel):
+    status: str = "completed"
     summary: str = "Static analysis"
     findings: list[SecurityFinding] = Field(default_factory=list)
     total_findings: int = 0
@@ -177,7 +179,10 @@ class SecurityAnalysis(BaseModel):
     medium_count: int = 0
     low_count: int = 0
     files_scanned: int = 0
+    rules_applied: list[str] = Field(default_factory=list)
     rules_triggered: list[str] = Field(default_factory=list)
+    files_skipped: int = 0
+    skipped_reasons: dict[str, int] = Field(default_factory=dict)
 
 
 class MetricsAnalysis(BaseModel):
@@ -234,6 +239,36 @@ class DocumentationAnalysis(BaseModel):
     source_comment_lines: int
 
 
+class BugRiskFactor(BaseModel):
+    name: str
+    contribution: int
+    signal: str
+    value: object | None = None
+    available: bool = True
+
+
+class BugRiskFinding(BaseModel):
+    path: str
+    score: int
+    level: str
+    factors: list[str] = Field(default_factory=list)
+    explanation: str
+    confidence: str
+    evidence: dict[str, object] = Field(default_factory=dict)
+
+
+class BugRiskSummary(BaseModel):
+    status: str = "completed"
+    total_files_analyzed: int = 0
+    files_analyzed: int = 0
+    signals_used: list[str] = Field(default_factory=list)
+    high_risk_count: int = 0
+    medium_risk_count: int = 0
+    low_risk_count: int = 0
+    critical_count: int = 0
+    findings: list[BugRiskFinding] = Field(default_factory=list)
+
+
 class RepositoryAnalysis(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -257,3 +292,9 @@ class RepositoryAnalysis(BaseModel):
     security_analysis: SecurityAnalysis = Field(default_factory=SecurityAnalysis)
     metrics: MetricsAnalysis | None = None
     documentation_analysis: DocumentationAnalysis | None = None
+    bug_risk_analysis: BugRiskSummary = Field(default_factory=BugRiskSummary)
+    tree_item_count: int = 0
+    source_files_count: int = 0
+    ast_files_count: int = 0
+    source_files_skipped: int = 0
+    source_skip_reasons: dict[str, int] = Field(default_factory=dict)

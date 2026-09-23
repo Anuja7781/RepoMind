@@ -120,10 +120,15 @@ export interface RepositoryAnalysis {
   security_analysis: SecurityAnalysis
   metrics: MetricsAnalysis | null
   documentation_analysis: DocumentationAnalysis | null
+  bug_risk_analysis: BugRiskSummary
+  tree_item_count: number
+  source_files_count: number
+  ast_files_count: number
 }
 
 export interface SecurityFinding {
   id: string
+  rule: string
   severity: "critical" | "high" | "medium" | "low"
   category: string
   title: string
@@ -136,6 +141,7 @@ export interface SecurityFinding {
 }
 
 export interface SecurityAnalysis {
+  status: "completed" | "no_eligible_files" | "unavailable" | "failed" | string
   summary: string
   findings: SecurityFinding[]
   total_findings: number
@@ -144,7 +150,10 @@ export interface SecurityAnalysis {
   medium_count: number
   low_count: number
   files_scanned: number
+  rules_applied: string[]
   rules_triggered: string[]
+  files_skipped: number
+  skipped_reasons: Record<string, number>
 }
 
 export interface MetricsAnalysis {
@@ -193,6 +202,28 @@ export interface DocumentationAnalysis {
   todo_count: number
   fixme_count: number
   source_comment_lines: number
+}
+
+export interface BugRiskFinding {
+  path: string
+  score: number
+  level: "low" | "medium" | "high" | "critical"
+  factors: string[]
+  explanation: string
+  confidence: string
+  evidence: Record<string, unknown>
+}
+
+export interface BugRiskSummary {
+  status: "completed" | "no_eligible_files" | "unavailable" | "failed" | string
+  total_files_analyzed: number
+  files_analyzed: number
+  signals_used: string[]
+  high_risk_count: number
+  medium_risk_count: number
+  low_risk_count: number
+  critical_count: number
+  findings: BugRiskFinding[]
 }
 
 export class AnalysisApiError extends Error {
