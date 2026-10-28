@@ -5,7 +5,7 @@ import path from 'node:path'
 
 import siteConfiguration from './.figma/make/site.json'
 
-const BACKEND_TARGET = 'http://127.0.0.1:8002'
+const BACKEND_TARGET = process.env.REPOMIND_BACKEND_URL || 'http://127.0.0.1:8000'
 
 // Vite config — https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {

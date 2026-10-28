@@ -1,7 +1,7 @@
-import { useState, useCallback } from "react"
-import { analyzeRepository, type RepositoryAnalysis } from "@/services/analysisApi"
+import { useState, useCallback, useRef } from "react"
+import { analyzeRepository, retrieveTransferredAnalysis, type RepositoryAnalysis } from "@/services/analysisApi"
 
-export type AnalysisState = "idle" | "running" | "complete" | "error"
+export type AnalysisState = "idle" | "running" | "loading-transfer" | "complete" | "error"
 
 const ANALYSIS_PHASES = [
   { id: "connect", label: "Connecting to Repository", description: "Sending the repository URL to the analysis backend", duration: 0 },
@@ -27,6 +27,7 @@ export interface UseAnalysisReturn {
   repoUrl: string
   setRepoUrl: (url: string) => void
   startAnalysis: (repositoryUrl?: string) => Promise<void>
+  loadTransferredAnalysis: (resultId: string) => Promise<void>
   reset: () => void
 }
 
@@ -37,8 +38,12 @@ export function useAnalysis(): UseAnalysisReturn {
   const [phaseProgress, setPhaseProgress] = useState(0)
   const [result, setResult] = useState<AnalysisResult | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const requestInFlight = useRef(false)
+  const transferLoadsStarted = useRef(new Set<string>())
 
   const startAnalysis = useCallback(async (requestedUrl = repoUrl) => {
+    if (requestInFlight.current) return
+    requestInFlight.current = true
     setError(null)
     setState("running")
     setCurrentPhase(0)
@@ -58,10 +63,39 @@ export function useAnalysis(): UseAnalysisReturn {
     } catch (analysisError) {
       setError(analysisError instanceof Error ? analysisError.message : 'Repository analysis failed.')
       setState("error")
+    } finally {
+      requestInFlight.current = false
     }
   }, [repoUrl])
 
+  const loadTransferredAnalysis = useCallback(async (resultId: string) => {
+    if (requestInFlight.current || transferLoadsStarted.current.has(resultId)) return
+    transferLoadsStarted.current.add(resultId)
+    requestInFlight.current = true
+    setError(null)
+    setState("loading-transfer")
+    setCurrentPhase(0)
+    setPhaseProgress(35)
+    setResult(null)
+
+    try {
+      const repository = await retrieveTransferredAnalysis(resultId)
+      setRepoUrl(`https://github.com/${repository.owner}/${repository.name}`)
+      setResult({ repository, completedAt: new Date().toLocaleTimeString() })
+      setCurrentPhase(3)
+      setPhaseProgress(100)
+      setState("complete")
+    } catch (transferError) {
+      transferLoadsStarted.current.delete(resultId)
+      setError(transferError instanceof Error ? transferError.message : "The transferred repository analysis could not be loaded.")
+      setState("error")
+    } finally {
+      requestInFlight.current = false
+    }
+  }, [])
+
   const reset = useCallback(() => {
+    if (requestInFlight.current) return
     setState("idle")
     setCurrentPhase(0)
     setPhaseProgress(0)
@@ -69,5 +103,17 @@ export function useAnalysis(): UseAnalysisReturn {
     setError(null)
   }, [])
 
-  return { state, phases: ANALYSIS_PHASES, currentPhase, phaseProgress, result, error, repoUrl, setRepoUrl, startAnalysis, reset }
+  return {
+    state,
+    phases: ANALYSIS_PHASES,
+    currentPhase,
+    phaseProgress,
+    result,
+    error,
+    repoUrl,
+    setRepoUrl,
+    startAnalysis,
+    loadTransferredAnalysis,
+    reset,
+  }
 }

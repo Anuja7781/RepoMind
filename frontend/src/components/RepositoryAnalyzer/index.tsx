@@ -411,11 +411,14 @@ function ResultsView({ result, onReset }: {
 }
 
 // ─── Repository Analyzer (main export) ───────────────────────────────────────
-export default function RepositoryAnalyzer({ initialUrl }: { initialUrl?: string }) {
-  const { state, phases, currentPhase, phaseProgress, result, error, repoUrl, setRepoUrl, startAnalysis, reset } = useAnalysis()
+export default function RepositoryAnalyzer({ initialUrl, initialTransferId }: { initialUrl?: string; initialTransferId?: string | null }) {
+  const { state, phases, currentPhase, phaseProgress, result, error, repoUrl, setRepoUrl, startAnalysis, loadTransferredAnalysis, reset } = useAnalysis()
 
   // Pre-fill URL from hero if provided
   useEffect(() => { if (initialUrl) setRepoUrl(initialUrl) }, [initialUrl, setRepoUrl])
+  useEffect(() => {
+    if (initialTransferId !== undefined) void loadTransferredAnalysis(initialTransferId ?? "")
+  }, [initialTransferId, loadTransferredAnalysis])
 
   return (
     <section id="product" className="py-16 relative min-h-screen">
@@ -441,8 +444,17 @@ export default function RepositoryAnalyzer({ initialUrl }: { initialUrl?: string
           {(state === "idle" || state === "error") && (
             <motion.div key="idle" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
               {error && (
-                <div className="max-w-3xl mx-auto mb-5 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-300">
-                  {error}
+                <div className="max-w-3xl mx-auto mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-300" role="alert">
+                  <span>{error}</span>
+                  {initialTransferId !== undefined && (
+                    <button
+                      type="button"
+                      onClick={() => void loadTransferredAnalysis(initialTransferId ?? "")}
+                      className="rounded-lg border border-red-400/20 px-3 py-1.5 text-xs text-red-200 hover:bg-red-400/10"
+                    >
+                      Retry loading result
+                    </button>
+                  )}
                 </div>
               )}
               <AnalysisInput repoUrl={repoUrl} setRepoUrl={setRepoUrl} onStart={startAnalysis} />
@@ -460,6 +472,18 @@ export default function RepositoryAnalyzer({ initialUrl }: { initialUrl?: string
           {state === "running" && (
             <motion.div key="running" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
               <AnalysisProgress currentPhase={currentPhase} phaseProgress={phaseProgress} repoUrl={repoUrl} />
+            </motion.div>
+          )}
+
+          {state === "loading-transfer" && (
+            <motion.div key="loading-transfer" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+              <div className="glass mx-auto flex max-w-xl items-center gap-4 rounded-2xl p-6" role="status" aria-live="polite">
+                <Loader2 size={20} className="animate-spin text-violet-400" />
+                <div>
+                  <div className="text-sm font-semibold text-white">Loading transferred analysis</div>
+                  <div className="mt-1 text-xs text-gray-500">Retrieving the completed repository results. Analysis will not run again.</div>
+                </div>
+              </div>
             </motion.div>
           )}
 

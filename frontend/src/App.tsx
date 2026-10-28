@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Nav from "@/components/sections/Nav"
 import Hero from "@/components/sections/Hero"
 import RepositoryAnalyzer from "@/components/RepositoryAnalyzer"
@@ -201,8 +201,22 @@ function FeatureNav({ current, onChange }: { current: Page; onChange: (p: Page) 
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [page, setPage] = useState<Page>("home")
+  const [transferRequest] = useState(() => {
+    const params = new URLSearchParams(window.location.search)
+    return {
+      requested: params.has("analysisResult"),
+      resultId: params.get("analysisResult"),
+    }
+  })
+  const [page, setPage] = useState<Page>(() => transferRequest.requested ? "analyze" : "home")
   const [initialUrl, setInitialUrl] = useState("")
+
+  useEffect(() => {
+    if (!transferRequest.requested) return
+    const currentUrl = new URL(window.location.href)
+    currentUrl.searchParams.delete("analysisResult")
+    window.history.replaceState(window.history.state, "", `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`)
+  }, [transferRequest])
 
   const goAnalyze = (url?: string) => {
     if (url) setInitialUrl(url)
@@ -213,7 +227,7 @@ export default function App() {
     return (
       <div className="min-h-screen overflow-x-hidden" style={{ background: "#0d0d18", color: "#e2e8f0" }}>
         <FeatureNav current={page} onChange={setPage} />
-        {page === "analyze"  && <RepositoryAnalyzer initialUrl={initialUrl} />}
+        {page === "analyze"  && <RepositoryAnalyzer initialUrl={initialUrl} initialTransferId={transferRequest.requested ? transferRequest.resultId : undefined} />}
         {page === "impact"   && <ImpactAnalysis />}
         {page === "drift"    && <ArchitectureDrift />}
         {page === "discover" && <RepositoryDiscovery />}

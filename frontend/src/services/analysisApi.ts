@@ -233,6 +233,29 @@ export class AnalysisApiError extends Error {
   }
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function isRepositoryAnalysis(value: unknown): value is RepositoryAnalysis {
+  return (
+    isRecord(value) &&
+    typeof value.name === "string" &&
+    typeof value.owner === "string" &&
+    typeof value.default_branch === "string" &&
+    isRecord(value.languages) &&
+    Array.isArray(value.structure) &&
+    Array.isArray(value.source_files) &&
+    Array.isArray(value.ast_analysis) &&
+    Array.isArray(value.dependency_analysis) &&
+    isRecord(value.dependency_graph) &&
+    isRecord(value.entity_graph) &&
+    isRecord(value.architecture_analysis) &&
+    isRecord(value.security_analysis) &&
+    isRecord(value.bug_risk_analysis)
+  )
+}
+
 function getDetailMessage(detail: unknown): string | null {
   if (typeof detail === 'string') return detail
   if (!Array.isArray(detail)) return null
@@ -244,6 +267,45 @@ function getDetailMessage(detail: unknown): string | null {
   }).filter((message): message is string => Boolean(message))
 
   return messages.length > 0 ? messages.join(' ') : null
+}
+
+export async function retrieveTransferredAnalysis(resultId: string): Promise<RepositoryAnalysis> {
+  if (!/^[A-Za-z0-9_-]{43}$/.test(resultId)) {
+    throw new AnalysisApiError("The dashboard result reference is missing or invalid.", 422)
+  }
+
+  let response: Response
+  try {
+    response = await fetch("/api/analysis-results/retrieve", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ result_id: resultId }),
+    })
+  } catch {
+    throw new Error("The RepoMind backend could not be reached. Check the backend connection and reload the dashboard.")
+  }
+
+  const payload: unknown = await response.json().catch(() => null)
+  if (!response.ok) {
+    const detail = isRecord(payload) ? getDetailMessage(payload.detail) : null
+    if (response.status === 404) {
+      throw new AnalysisApiError(
+        "This dashboard analysis link is invalid or has expired. Analyze the repository again to create a fresh link.",
+        response.status,
+      )
+    }
+    if (response.status === 422) {
+      throw new AnalysisApiError("The dashboard result reference is invalid.", response.status)
+    }
+    if (response.status >= 500) {
+      throw new AnalysisApiError(detail ?? "The backend could not retrieve this analysis and may be unavailable. Check the backend connection and try again.", response.status)
+    }
+    throw new AnalysisApiError(detail ?? "The transferred repository analysis could not be retrieved.", response.status)
+  }
+  if (!isRepositoryAnalysis(payload)) {
+    throw new AnalysisApiError("The backend returned an unexpected analysis response.", response.status)
+  }
+  return payload
 }
 
 export async function analyzeRepository(repositoryUrl: string): Promise<RepositoryAnalysis> {

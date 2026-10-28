@@ -14,7 +14,7 @@ function normalize(graph?: EntityGraph | null): { nodes: EntityView[]; edges: Ed
   const nodes = graph?.nodes ?? []
   const edges = graph?.edges ?? []
   const degree = new Map<string, number>()
-  graph.edges.forEach(edge => { degree.set(edge.source, (degree.get(edge.source) ?? 0) + 1); degree.set(edge.target, (degree.get(edge.target) ?? 0) + 1) })
+  edges.forEach(edge => { degree.set(edge.source, (degree.get(edge.source) ?? 0) + 1); degree.set(edge.target, (degree.get(edge.target) ?? 0) + 1) })
   return {
     nodes: nodes.map(node => ({ ...node, type: (TYPE_LABELS[node.node_type] ? node.node_type : "module") as EntityType, degree: degree.get(node.id) ?? 0, x: 0, y: 0 })),
     edges: edges.map(edge => ({ ...edge, label: edge.relationship })),
